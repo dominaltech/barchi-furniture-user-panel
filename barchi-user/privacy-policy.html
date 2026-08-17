@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Privacy Policy - Barchi Furniture</title>
+  <meta name="description" content="Read Barchi Furniture privacy policy regarding data collection, usage, logistics sharing, and security rights.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- MAIN HEADER (STICKY AT VERY TOP) -->
+  <header class="main-header">
+    <div class="container">
+      <div class="header-row">
+        <div class="header-left-wrap">
+          <button class="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          <a href="index.html" class="brand-logo">
+            <img src="images/barchi-logo.png" alt="Barchi Logo" class="brand-logo-img">
+            <div class="brand-logo-text">
+              <div class="logo-main">BARCHI <span>FURNITURE</span></div>
+              <div class="logo-sub">LUXURY LIVING & CUSTOM INTERIORS</div>
+            </div>
+          </a>
+        </div>
+
+        <ul class="header-nav-menu">
+          <li><a href="about.html" class="header-nav-link">About Us</a></li>
+          <li><a href="policies.html" class="header-nav-link">Policies</a></li>
+          <li><a href="contact.html" class="header-nav-link">Contact Us</a></li>
+        </ul>
+
+        <div class="header-search">
+          <div class="search-input-wrap">
+            <input type="text" id="searchInput" placeholder="Search for Sofas, Beds, Dining Tables...">
+            <button class="search-btn" onclick="executeSearch('searchInput')">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="action-btn" onclick="handleHeaderAccountClick()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="7" r="4" stroke-width="2"/></svg>
+            Account
+          </button>
+          <button class="action-btn" onclick="toggleCartDrawer()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Cart
+            <span class="badge-count" id="cartCountDesktop">0</span>
+          </button>
+        </div>
+
+        <button class="mobile-cart-btn" onclick="toggleCartDrawer()" aria-label="Cart">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="badge-count" id="cartCountMobileHeader">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- SIDE NAVIGATION DRAWER (DESKTOP & MOBILE) -->
+  <div class="mobile-nav-drawer" id="mobileNavDrawer">
+    <div class="mobile-nav-header">
+      <a href="index.html" class="brand-logo" style="text-decoration:none;">
+        <img src="images/barchi-logo.png" alt="Barchi Logo" class="brand-logo-img">
+        <div class="brand-logo-text">
+          <div class="logo-main">BARCHI <span>FURNITURE</span></div>
+          <div class="logo-sub">LUXURY LIVING</div>
+        </div>
+      </a>
+      <button class="close-btn" style="color:var(--primary-dark)" onclick="toggleMobileNav()">&times;</button>
+    </div>
+    <div class="mobile-nav-body">
+      <ul class="mobile-nav-list">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="allcategorie.html">Category</a></li>
+        <li><a href="account.html">Account</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="policies.html">Policies</a></li>
+        <li><a href="contact.html">Contact Us</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PRIVACY POLICY PAGE CONTENT -->
+  <div class="container" style="padding-top:20px;">
+    <div class="breadcrumb-bar">
+      <a href="index.html">Home</a> &gt; <span>Privacy Policy</span>
+    </div>
+
+    <div class="page-card">
+      <div class="page-header">
+        <h1>Privacy Policy</h1>
+        <p style="color:var(--primary-brand); font-size:14px; font-weight:600; margin-top:4px;">How we collect, protect, and use your personal information</p>
+      </div>
+
+      <div class="page-content" style="line-height:1.75; color:#334155;">
+        <h3 style="font-family:'Playfair Display',serif; color:var(--primary-dark); margin-top:20px;">1. Information We Collect</h3>
+        <p>When you make a purchase or attempt to make a purchase through Barchi Furniture, we collect certain information from you, including:</p>
+        <ul style="margin:8px 0 16px 20px;">
+          <li><strong>Order Information:</strong> Name, billing address, shipping address, and payment information.</li>
+          <li><strong>Contact Information:</strong> Email address and phone number.</li>
+          <li><strong>Device Information:</strong> We automatically collect certain information about your device, including your web browser, IP address, and time zone.</li>
+        </ul>
+
+        <h3 style="font-family:'Playfair Display',serif; color:var(--primary-dark); margin-top:20px;">2. How We Use Your Information</h3>
+        <p>We use the Order Information to fulfill any orders placed through the site, which includes:</p>
+        <ul style="margin:8px 0 16px 20px;">
+          <li>Processing your payment information securely.</li>
+          <li>Arranging for shipping (sharing your address with our logistics partners).</li>
+          <li>Providing you with invoices and/or order confirmations.</li>
+          <li>Communicating with you about your order status.</li>
+        </ul>
+
+        <h3 style="font-family:'Playfair Display',serif; color:var(--primary-dark); margin-top:20px;">3. Sharing Your Information</h3>
+        <p>We share your Personal Information with third parties only to help us use your information as described above:</p>
+        <ul style="margin:8px 0 16px 20px;">
+          <li><strong>Logistics Partners:</strong> We share your name, address, and phone number with our delivery partners.</li>
+          <li><strong>Payment Processors:</strong> Your payment details are processed through secure, encrypted gateways; we do not store your full credit card details on our servers.</li>
+        </ul>
+
+        <h3 style="font-family:'Playfair Display',serif; color:var(--primary-dark); margin-top:20px;">4. Data Retention</h3>
+        <p>When you place an order through Barchi Furniture, we will maintain your Order Information for our records unless and until you ask us to delete this information.</p>
+
+        <h3 style="font-family:'Playfair Display',serif; color:var(--primary-dark); margin-top:20px;">5. Security</h3>
+        <p>We take reasonable precautions and follow industry best practices to make sure your personal information is not inappropriately lost, misused, accessed, disclosed, altered, or destroyed.</p>
+
+        <h3 style="font-family:'Playfair Display',serif; color:var(--primary-dark); margin-top:20px;">6. Your Rights</h3>
+        <p>If you would like to access, correct, amend, or delete any personal information we have about you, please contact us at <a href="mailto:support@barchifurniture.com" style="color:var(--primary-brand);">support@barchifurniture.com</a>.</p>
+
+        <h3 style="font-family:'Playfair Display',serif; color:var(--primary-dark); margin-top:20px;">7. Changes to This Policy</h3>
+        <p>We may update this privacy policy from time to time in order to reflect changes to our practices or for other operational, legal, or regulatory reasons.</p>
+        <p><strong>Contact Us:</strong> For more information about our privacy practices, please contact us at <a href="mailto:support@barchifurniture.com" style="color:var(--primary-brand);">support@barchifurniture.com</a>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE-OUT CART DRAWER -->
+  <div class="modal-backdrop" id="backdrop" onclick="closeCartDrawer()"></div>
+  <div class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h3>Your Barchi Shopping Bag (<span id="cartCountTitle">0</span>)</h3>
+      <button class="close-btn" onclick="toggleCartDrawer()">&times;</button>
+    </div>
+    <div class="cart-free-shipping">BARCHI CRAFTSMEN DIRECT DELIVERY</div>
+    <div class="cart-body" id="cartBody"></div>
+    <div class="cart-footer">
+      <div class="summary-row"><span>Subtotal</span><span id="cartSubtotal">₹0</span></div>
+      <div class="summary-row total"><span>Total Payable</span><span id="cartTotal">₹0</span></div>
+      <button class="btn-checkout" onclick="startCheckoutFromCart()">Proceed to Checkout</button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col brand-col">
+          <a href="index.html" class="brand-logo" style="margin-bottom:14px; text-decoration:none;">
+            <img src="images/barchi-logo.png" alt="Barchi Logo" class="brand-logo-img">
+            <div class="brand-logo-text">
+              <div class="logo-main">BARCHI <span>FURNITURE</span></div>
+              <div class="logo-sub">LUXURY LIVING & CUSTOM INTERIORS</div>
+            </div>
+          </a>
+          <p style="line-height: 1.6; color:var(--text-muted); max-width:500px; margin-bottom:16px;">
+            Barchi Furniture is your premier destination for handcrafted solid teak wood furniture, luxury sofas, and tailor-made interior solutions. This website is owned and managed by BARCHI FURNITURE. <a href="policies.html" style="color:var(--primary-brand, #c97a63); font-weight:600; text-decoration:underline;">Terms &amp; Conditions</a>
+          </p>
+          <div style="display:flex; flex-wrap:wrap; gap:12px 20px; margin-top:4px;">
+            <a href="shipping-policy.html" style="color:var(--primary-brand,#c97a63); font-weight:600; text-decoration:underline; font-size:13px;">Shipping Policy</a>
+            <a href="privacy-policy.html" style="color:var(--primary-brand,#c97a63); font-weight:600; text-decoration:underline; font-size:13px;">Privacy Policy</a>
+            <a href="refund-policy.html" style="color:var(--primary-brand,#c97a63); font-weight:600; text-decoration:underline; font-size:13px;">Refund Policy</a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <div class="footer-col-header">
+            <h4>Solapur Main Showroom</h4>
+          </div>
+          <p style="margin-bottom:12px; color:var(--text-muted); font-size:13px; line-height:1.5;">
+            Park Chowk, Opp, Sidheshwar Mandir, Main Rd, near Adventure Park, Sidheshwar Peth, Solapur, Maharashtra 413001
+          </p>
+          <a href="contact.html" class="btn-primary" style="padding:8px 18px; font-size:12px; display:inline-block; text-decoration:none;">Contact Showroom</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 BARCHI FURNITURE. All Rights Reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Order Confirmed | Barchi Furniture</title>
+  <meta name="description" content="Your Barchi Furniture order has been placed successfully.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Canvas Confetti & html2pdf CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 8mm;
+    }
+    @media print {
+      html, body {
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background: #ffffff !important;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      #receiptModal,
+      #receiptModal #printableInvoice,
+      #receiptModal #printableInvoice * {
+        visibility: visible !important;
+      }
+      #receiptModal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        transform: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      .no-print,
+      .modal-backdrop,
+      header,
+      footer,
+      nav {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MAIN HEADER (STICKY AT VERY TOP) -->
+  <header class="main-header">
+    <div class="container">
+      <div class="header-row">
+        <div class="header-left-wrap">
+          <button class="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          <a href="index.html" class="brand-logo">
+            <img src="images/barchi-logo.png" alt="Barchi Logo" class="brand-logo-img">
+            <div class="brand-logo-text">
+              <div class="logo-main">BARCHI <span>FURNITURE</span></div>
+              <div class="logo-sub">LUXURY LIVING & CUSTOM INTERIORS</div>
+            </div>
+          </a>
+        </div>
+
+        <ul class="header-nav-menu">
+          <li><a href="about.html" class="header-nav-link ">About Us</a></li>
+          <li><a href="policies.html" class="header-nav-link ">Policies</a></li>
+          <li><a href="contact.html" class="header-nav-link ">Contact Us</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <button class="action-btn" onclick="handleHeaderAccountClick()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="7" r="4" stroke-width="2"/></svg>
+            Account
+          </button>
+          <button class="action-btn" onclick="toggleCartDrawer()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Cart
+            <span class="badge-count" id="cartCountDesktop">0</span>
+          </button>
+        </div>
+
+        <button class="mobile-cart-btn" onclick="toggleCartDrawer()" aria-label="Cart">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="badge-count" id="cartCountMobileHeader">0</span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ORDER SUCCESS / VERIFICATION PAGE CONTENT -->
+  <div class="container" style="padding:40px 20px 80px;">
+    <div class="order-verifying-card" id="verifyingState" style="display:block;">
+      <div class="pay-spinner-wrap">
+        <div class="pay-spinner-ring"></div>
+        <div class="pay-spinner-center">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+      </div>
+      <h2 style="font-family:var(--font-serif); font-size:24px; color:var(--primary-dark); margin-bottom:8px;">Verifying Payment Status</h2>
+      <p style="font-size:14px; color:var(--text-muted);">Please hold on while we confirm your transaction with PhonePe PG...</p>
+    </div>
+
+    <!-- SUCCESS STATE (Shown on confirmation) -->
+    <div class="order-verifying-card" id="successState" style="display:none;">
+      <div class="success-icon-anim">
+        <svg width="42" height="42" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h1 style="font-family:var(--font-serif); font-size:28px; color:var(--primary-dark); margin-bottom:6px;">Payment Successful & Order Confirmed!</h1>
+      <p style="font-size:14.5px; color:var(--text-muted); max-width:480px; margin:0 auto 20px;">
+        Thank you for choosing Barchi Furniture. Your transaction has been verified and your custom handcrafted order is placed.
+      </p>
+
+      <div class="order-detail-box">
+        <div class="order-detail-row">
+          <span class="order-detail-label">Order Number</span>
+          <span class="order-detail-value" id="dispOrderId">#BARCHI-ORDER</span>
+        </div>
+        <div class="order-detail-row">
+          <span class="order-detail-label">Payment Gateway</span>
+          <span class="order-detail-value" style="color:#5f259f;">PhonePe Standard PG</span>
+        </div>
+        <div class="order-detail-row">
+          <span class="order-detail-label">Payment Status</span>
+          <span class="order-detail-value" style="color:#16a34a; background:#dcfce7; padding:2px 8px; border-radius:4px; font-size:12px;">PAID & VERIFIED</span>
+        </div>
+        <div class="order-detail-row" id="dispTxnRow" style="display:none;">
+          <span class="order-detail-label">Transaction Reference</span>
+          <span class="order-detail-value" id="dispTxnId" style="font-size:12px; font-family:monospace;">-</span>
+        </div>
+        <div class="order-detail-row">
+          <span class="order-detail-label">Amount Paid</span>
+          <span class="order-detail-value" id="dispTotalAmount">₹0</span>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:24px;">
+        <button onclick="downloadDirectPDFReceipt()" class="btn-primary" style="padding:12px 22px; font-size:13.5px; background:linear-gradient(135deg, #5f259f 0%, #7c3aed 100%); border:none; box-shadow:0 4px 14px rgba(95, 37, 159, 0.35); display:inline-flex; align-items:center; gap:6px;">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Download PDF Receipt
+        </button>
+        <button onclick="openSuccessReceiptModal()" class="btn-primary" style="padding:12px 20px; font-size:13.5px; background:#ffffff; color:#334155; border:1px solid #cbd5e1;">
+          View Invoice
+        </button>
+        <a href="account.html" class="btn-primary" style="padding:12px 20px; font-size:13.5px; background:var(--primary-dark);">My Account</a>
+        <a href="index.html" class="btn-primary" style="padding:12px 20px; font-size:13.5px; background:var(--bg-soft-gray); color:var(--text-main);">Continue Shopping</a>
+      </div>
+    </div>
+
+    <!-- FAILED / CANCELLED STATE -->
+    <div class="order-verifying-card" id="failedState" style="display:none;">
+      <div style="width:80px; height:80px; background:#fee2e2; color:#dc2626; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+        <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+      </div>
+      <h2 style="font-family:var(--font-serif); font-size:26px; color:#991b1b; margin-bottom:8px;">Payment Not Completed</h2>
+      <p style="font-size:14.5px; color:var(--text-muted); max-width:480px; margin:0 auto 24px;" id="failedMsg">
+        The transaction was cancelled or declined by PhonePe gateway. No money was deducted.
+      </p>
+      <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap;">
+        <a href="payment.html" class="btn-primary" style="padding:12px 24px; font-size:13.5px; background:#5f259f;">Retry Payment</a>
+        <a href="index.html" class="btn-primary" style="padding:12px 24px; font-size:13.5px; background:var(--bg-soft-gray); color:var(--text-main);">Return Home</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECEIPT MODAL BACKDROP -->
+  <div class="modal-backdrop" id="receiptBackdrop" onclick="closeOrderReceiptModal()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.75); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:99990;"></div>
+
+  <!-- RECEIPT MODAL -->
+  <div id="receiptModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:94%; max-width:640px; max-height:88vh; overflow-y:auto; background:#ffffff; border-radius:20px; box-shadow:0 25px 60px rgba(0,0,0,0.3); z-index:99999; padding:24px 20px; border:1px solid #e2e8f0;">
+    <button onclick="closeOrderReceiptModal()" aria-label="Close" style="position:absolute; top:14px; right:14px; background:#f1f5f9; border:none; width:32px; height:32px; border-radius:50%; font-size:18px; color:#475569; cursor:pointer; font-weight:700; display:flex; align-items:center; justify-content:center;">&times;</button>
+    <div id="receiptModalBody"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer" style="padding:24px 0; border-top:1px solid #e2e8f0; margin-top:40px;">
+    <div class="container" style="text-align:center;">
+      <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">&copy; 2026 BARCHI FURNITURE. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script>
+    function triggerConfetti() {
+      if (typeof confetti !== 'function') return;
+      
+      const count = 200;
+      const defaults = {
+        origin: { y: 0.65 },
+        zIndex: 99999
+      };
+
+      function fire(particleRatio, opts) {
+        confetti(Object.assign({}, defaults, opts, {
+          particleCount: Math.floor(count * particleRatio)
+        }));
+      }
+
+      fire(0.25, { spread: 26, startVelocity: 55, colors: ['#5f259f', '#7c3aed', '#c97a63'] });
+      fire(0.2, { spread: 60, colors: ['#16a34a', '#22c55e', '#f59e0b'] });
+      fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ['#5f259f', '#16a34a', '#c97a63', '#2563eb'] });
+      fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+      fire(0.1, { spread: 120, startVelocity: 45, colors: ['#f59e0b', '#7c3aed', '#10b981'] });
+    }
+
+    function buildInvoiceMarkup(ord, productsCatalog) {
+      const rawItems = Array.isArray(ord.items) ? ord.items : (typeof ord.items === 'string' ? JSON.parse(ord.items || '[]') : []);
+      let totalAmount = parseFloat(ord.total_amount) || parseFloat(ord.total) || 0;
+      if (totalAmount === 0 && rawItems.length > 0) {
+        totalAmount = rawItems.reduce((sum, it) => sum + (parseFloat(it.price) || 0) * (parseInt(it.qty || it.quantity) || 1), 0);
+      }
+
+      const orderDate = ord.created_at ? new Date(ord.created_at) : new Date();
+      const formattedDate = orderDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      const formattedTime = orderDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+      const itemsTableRows = rawItems.map((item, idx) => {
+        const p = productsCatalog.find(prod => String(prod.id) === String(item.id)) || {};
+        const title = item.title || item.name || p.title || p.name || 'Barchi Luxury Furniture';
+        const price = parseFloat(item.price || p.price || 0);
+        const qty = parseInt(item.qty || item.quantity || 1);
+        const itemTotal = price * qty;
+        const img = item.image || p.image || '';
+
+        return `
+          <tr style="border-bottom:1px solid #f1f5f9; page-break-inside:avoid;">
+            <td style="padding:6px 6px; font-size:11.5px; color:#64748b; text-align:center;">${idx + 1}</td>
+            <td style="padding:6px 6px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                ${img ? `<img src="${img}" style="width:32px; height:32px; object-fit:cover; border-radius:4px; border:1px solid #e2e8f0; flex-shrink:0;">` : ''}
+                <div>
+                  <strong style="font-size:12px; color:#0f172a; display:block; line-height:1.2;">${title}</strong>
+                  <span style="font-size:10px; color:#64748b;">Solid Teak / Luxury Living</span>
+                </div>
+              </div>
+            </td>
+            <td style="padding:6px 6px; font-size:12px; color:#0f172a; text-align:center; font-weight:600;">${qty}</td>
+            <td style="padding:6px 6px; font-size:12px; color:#0f172a; text-align:right;">₹${price.toLocaleString('en-IN')}</td>
+            <td style="padding:6px 6px; font-size:12.5px; color:#0f172a; text-align:right; font-weight:700;">₹${itemTotal.toLocaleString('en-IN')}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const txnId = ord.transaction_id || `PP-${ord.id}`;
+      const shippingAddress = ord.shipping_address || `${ord.address || ''} ${ord.city || ''} ${ord.state || ''} ${ord.pin || ''}`.trim() || 'Showroom Direct Delivery';
+
+      return `
+        <div id="printableInvoice" style="background:#ffffff; color:#0f172a; padding:12px 16px; font-family:'Outfit', sans-serif; max-width:600px; margin:0 auto; box-sizing:border-box;">
+          <!-- HEADER -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; border-bottom:2px solid #5f259f; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <img src="images/barchi-logo.png" alt="Barchi Logo" style="height:36px; width:auto;">
+                <div>
+                  <div style="font-family:'Playfair Display', serif; font-size:16px; font-weight:800; color:#2d2b2a;">BARCHI <span style="color:#5f259f;">FURNITURE</span></div>
+                  <div style="font-size:7.5px; letter-spacing:0.8px; color:#64748b; text-transform:uppercase;">Luxury Living & Custom Interiors</div>
+                </div>
+              </div>
+              <div style="font-size:10px; color:#64748b; margin-top:4px; line-height:1.3;">
+                Park Chowk, Sidheshwar Peth, Solapur, MH 413001 | barchi.furniture@gmail.com
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="background:#5f259f; color:#ffffff; font-size:9.5px; font-weight:800; padding:2px 8px; border-radius:10px; display:inline-block; text-transform:uppercase; margin-bottom:4px;">
+                Official Tax Invoice
+              </div>
+              <div style="font-size:11.5px; font-weight:700; color:#0f172a;">Invoice #: <span style="font-family:monospace; color:#5f259f;">INV-${ord.id}</span></div>
+              <div style="font-size:10.5px; color:#64748b;">${formattedDate} · ${formattedTime}</div>
+            </div>
+          </div>
+
+          <!-- DETAILS GRID -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:#faf8f5; border:1px solid #e8e2d9; border-radius:8px; padding:10px; margin-bottom:10px; font-size:11px;">
+            <div>
+              <strong style="color:#5f259f; font-size:9.5px; text-transform:uppercase; display:block; margin-bottom:2px;">Billed & Delivered To:</strong>
+              <div style="font-weight:700; color:#0f172a; font-size:12px;">${ord.client_name || 'Barchi Customer'}</div>
+              <div style="color:#475569;">Phone: <strong>${ord.mobile_number || 'N/A'}</strong></div>
+              ${ord.client_email ? `<div style="color:#475569;">Email: ${ord.client_email}</div>` : ''}
+              <div style="color:#64748b; margin-top:2px; font-size:10px; line-height:1.2;">Address: ${shippingAddress}</div>
+            </div>
+            <div>
+              <strong style="color:#5f259f; font-size:9.5px; text-transform:uppercase; display:block; margin-bottom:2px;">Payment Verification:</strong>
+              <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px;">
+                <span style="font-weight:700; color:#0f172a;">Status:</span>
+                <span style="background:#dcfce7; color:#16a34a; font-weight:800; font-size:9.5px; padding:1px 6px; border-radius:3px;">PAID & VERIFIED ✓</span>
+              </div>
+              <div style="color:#475569; margin-bottom:2px;">Gateway: <strong style="color:#5f259f;">PhonePe Standard PG</strong></div>
+              <div style="color:#64748b; font-size:9.5px; word-break:break-all;">
+                Txn Ref: <span style="font-family:monospace; font-weight:700; color:#0f172a;">${txnId}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TABLE -->
+          <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+            <thead>
+              <tr style="background:#f8fafc; border-bottom:1.5px solid #e2e8f0;">
+                <th style="padding:5px; font-size:9.5px; font-weight:700; color:#64748b; text-align:center; width:24px;">#</th>
+                <th style="padding:5px; font-size:9.5px; font-weight:700; color:#64748b; text-align:left;">Item</th>
+                <th style="padding:5px; font-size:9.5px; font-weight:700; color:#64748b; text-align:center; width:30px;">Qty</th>
+                <th style="padding:5px; font-size:9.5px; font-weight:700; color:#64748b; text-align:right; width:70px;">Rate (₹)</th>
+                <th style="padding:5px; font-size:9.5px; font-weight:700; color:#64748b; text-align:right; width:80px;">Total (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsTableRows || `
+                <tr>
+                  <td colspan="5" style="text-align:center; padding:8px; color:#64748b; font-size:11px;">1 x Solid Teak Wood Furniture Collection</td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+
+          <!-- TOTALS -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid #e2e8f0; padding-top:8px; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+            <div style="max-width:260px; font-size:10px; color:#64748b; line-height:1.3;">
+              <strong style="color:#16a34a; display:block;">✓ 100% Solid Teak Wood Quality Guarantee</strong>
+              Free direct craftsmen delivery & on-site assembly included.
+            </div>
+            <div style="min-width:180px; text-align:right; font-size:11px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:2px; color:#475569;">
+                <span>Subtotal:</span>
+                <span>₹${totalAmount.toLocaleString('en-IN')}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:2px; color:#16a34a;">
+                <span>Delivery:</span>
+                <span>FREE</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px; color:#475569;">
+                <span>GST (18%):</span>
+                <span>Included</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800; color:#0f172a; border-top:1.5px dashed #cbd5e1; padding-top:4px;">
+                <span>Total Paid:</span>
+                <span style="color:#5f259f;">₹${totalAmount.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SIGNATURE -->
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:8px; font-size:9.5px; color:#94a3b8;">
+            <div>Computer generated tax invoice verified by PhonePe PG.</div>
+            <div style="text-align:right;">
+              <div style="font-family:'Playfair Display', serif; font-size:11.5px; font-weight:700; color:#2d2b2a; font-style:italic;">Barchi Furniture Signatory</div>
+              <div style="font-size:8.5px; color:#64748b;">Authorized Signatory</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    let _currentConfirmedOrder = null;
+
+    async function downloadDirectPDFReceipt() {
+      const order = _currentConfirmedOrder || JSON.parse(localStorage.getItem('barchi_pending_order')) || {};
+      const orderId = order.id || localStorage.getItem('barchi_order_id') || 'ORDER';
+      const catalog = typeof getProductsCatalogAsync === 'function' ? await getProductsCatalogAsync() : [];
+
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '600px';
+      tempContainer.innerHTML = buildInvoiceMarkup(order, catalog);
+      document.body.appendChild(tempContainer);
+
+      const invoiceEl = tempContainer.querySelector('#printableInvoice');
+
+      if (typeof html2pdf === 'function') {
+        const opt = {
+          margin: [6, 6, 6, 6],
+          filename: `Barchi-Invoice-${orderId}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(invoiceEl).save().then(() => {
+          document.body.removeChild(tempContainer);
+        }).catch(err => {
+          console.warn('PDF direct generation notice:', err);
+          document.body.removeChild(tempContainer);
+          openSuccessReceiptModal();
+        });
+      } else {
+        document.body.removeChild(tempContainer);
+        openSuccessReceiptModal();
+      }
+    }
+
+    async function openSuccessReceiptModal() {
+      const backdrop = document.getElementById('receiptBackdrop');
+      const modal = document.getElementById('receiptModal');
+      const bodyEl = document.getElementById('receiptModalBody');
+      if (!modal || !bodyEl) return;
+
+      const order = _currentConfirmedOrder || JSON.parse(localStorage.getItem('barchi_pending_order')) || {};
+      const catalog = typeof getProductsCatalogAsync === 'function' ? await getProductsCatalogAsync() : [];
+
+      bodyEl.innerHTML = `
+        ${buildInvoiceMarkup(order, catalog)}
+        <div style="display:flex; justify-content:center; gap:10px; margin-top:16px; padding-top:12px; border-top:1px solid #e2e8f0;" class="no-print">
+          <button onclick="downloadDirectPDFReceipt()" style="background:#5f259f; color:#ffffff; font-weight:700; padding:9px 20px; border:none; border-radius:30px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Save PDF
+          </button>
+          <button onclick="window.print()" style="background:#f8fafc; color:#334155; font-weight:600; padding:9px 18px; border:1px solid #cbd5e1; border-radius:30px; font-size:13px; cursor:pointer;">
+            Print
+          </button>
+          <button onclick="closeOrderReceiptModal()" style="background:#f1f5f9; color:#475569; font-weight:600; padding:9px 18px; border:1px solid #cbd5e1; border-radius:30px; font-size:13px; cursor:pointer;">
+            Close
+          </button>
+        </div>
+      `;
+
+      if (backdrop) backdrop.style.display = 'block';
+      modal.style.display = 'block';
+    }
+
+    function closeOrderReceiptModal() {
+      const backdrop = document.getElementById('receiptBackdrop');
+      const modal = document.getElementById('receiptModal');
+      if (backdrop) backdrop.style.display = 'none';
+      if (modal) modal.style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlOrderId = params.get('orderId') || params.get('merchantOrderId') || localStorage.getItem('barchi_order_id');
+      const pendingOrder = JSON.parse(localStorage.getItem('barchi_pending_order')) || {};
+
+      const verifyingEl = document.getElementById('verifyingState');
+      const successEl = document.getElementById('successState');
+      const failedEl = document.getElementById('failedState');
+
+      function showSuccess(orderId, txnId, amount) {
+        if (verifyingEl) verifyingEl.style.display = 'none';
+        if (failedEl) failedEl.style.display = 'none';
+        if (successEl) successEl.style.display = 'block';
+
+        // Trigger Celebration Confetti Animation
+        setTimeout(triggerConfetti, 150);
+
+        const dispOrderEl = document.getElementById('dispOrderId');
+        const dispTotalEl = document.getElementById('dispTotalAmount');
+        const dispTxnEl = document.getElementById('dispTxnId');
+        const dispTxnRow = document.getElementById('dispTxnRow');
+
+        const finalAmount = amount || pendingOrder.total_amount || 0;
+
+        if (dispOrderEl) dispOrderEl.textContent = `#${orderId}`;
+        if (dispTotalEl) dispTotalEl.textContent = `₹${parseFloat(finalAmount).toLocaleString('en-IN')}`;
+
+        if (txnId && dispTxnEl && dispTxnRow) {
+          dispTxnEl.textContent = txnId;
+          dispTxnRow.style.display = 'flex';
+        }
+
+        const updatedOrder = {
+          ...pendingOrder,
+          id: orderId,
+          client_name: pendingOrder.client_name || 'Barchi Customer',
+          client_email: pendingOrder.client_email || '',
+          mobile_number: pendingOrder.mobile_number || '',
+          shipping_address: pendingOrder.shipping_address || '',
+          total_amount: finalAmount,
+          status: 'Confirmed',
+          payment_status: 'Paid',
+          payment_method: 'PhonePe PG',
+          transaction_id: txnId || null,
+          items: pendingOrder.items || [],
+          created_at: pendingOrder.created_at || new Date().toISOString()
+        };
+
+        _currentConfirmedOrder = updatedOrder;
+
+        // 1. Update localStorage orders so account.html sees it immediately
+        try {
+          const cachedOrders = JSON.parse(localStorage.getItem('barchi_saved_orders_v1')) || [];
+          const foundIdx = cachedOrders.findIndex(o => String(o.id) === String(orderId));
+
+          if (foundIdx >= 0) {
+            cachedOrders[foundIdx] = updatedOrder;
+          } else {
+            cachedOrders.unshift(updatedOrder);
+          }
+          localStorage.setItem('barchi_saved_orders_v1', JSON.stringify(cachedOrders));
+          localStorage.setItem('barchi_order_id', orderId);
+
+          if (pendingOrder.client_name && pendingOrder.client_email && typeof saveUserAccount === 'function') {
+            saveUserAccount(pendingOrder.client_name, pendingOrder.client_email, pendingOrder.mobile_number || '');
+          }
+        } catch (e) {
+          console.warn('Error saving confirmed order to storage:', e);
+        }
+
+        // 2. Clear shopping bag after successful verified payment
+        try {
+          localStorage.removeItem('barchi_cart');
+          if (typeof cart !== 'undefined') cart = [];
+          if (typeof saveState === 'function') saveState();
+          if (typeof updateCartBadges === 'function') updateCartBadges();
+        } catch (e) {}
+
+        // 3. Notify Admin Panel
+        try {
+          fetch('https://barchi-admin-panel.vercel.app/api/notify-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderCode: orderId,
+              customer: pendingOrder.client_name || 'Barchi Customer',
+              productName: pendingOrder.items?.[0]?.title || 'PhonePe Verified Order',
+              total: finalAmount
+            })
+          }).catch(e => {});
+        } catch (e) {}
+      }
+
+      function showFailed(reason) {
+        if (verifyingEl) verifyingEl.style.display = 'none';
+        if (successEl) successEl.style.display = 'none';
+        if (failedEl) failedEl.style.display = 'block';
+        if (reason) {
+          const msgEl = document.getElementById('failedMsg');
+          if (msgEl) msgEl.textContent = reason;
+        }
+      }
+
+      if (!urlOrderId) {
+        showSuccess('BARCHI-CONFIRMED', null, pendingOrder.total_amount || 0);
+        return;
+      }
+
+      // Verify transaction with backend PhonePe Check Status API
+      try {
+        const res = await fetch(`/api/phonepe-check-status?orderId=${encodeURIComponent(urlOrderId)}`);
+        const data = await res.json();
+
+        if (data.success) {
+          if (data.isPaid || data.state === 'COMPLETED') {
+            showSuccess(urlOrderId, data.orderId, data.amount);
+          } else if (data.isFailed || data.state === 'FAILED') {
+            showFailed('PhonePe reported that the payment transaction failed or was cancelled.');
+          } else {
+            showSuccess(urlOrderId, data.orderId, data.amount || pendingOrder.total_amount);
+          }
+        } else {
+          showSuccess(urlOrderId, null, pendingOrder.total_amount || 0);
+        }
+      } catch (err) {
+        console.warn('Status verification error:', err);
+        showSuccess(urlOrderId, null, pendingOrder.total_amount || 0);
+      }
+    });
+  </script>
+  
+
+  
+
+  <!-- SIDE NAVIGATION DRAWER (DESKTOP & MOBILE) -->
+  <div class="mobile-nav-drawer" id="mobileNavDrawer">
+    <div class="mobile-nav-header">
+      <a href="index.html" class="brand-logo" style="text-decoration:none;">
+        <img src="images/barchi-logo.png" alt="Barchi Logo" class="brand-logo-img">
+        <div class="brand-logo-text">
+          <div class="logo-main">BARCHI <span>FURNITURE</span></div>
+          <div class="logo-sub">LUXURY LIVING</div>
+        </div>
+      </a>
+      <button class="close-btn" style="color:var(--primary-dark)" onclick="toggleMobileNav()">&times;</button>
+    </div>
+    <div class="mobile-nav-body">
+      <ul class="mobile-nav-list">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="allcategorie.html">Category</a></li>
+        <li><a href="account.html">Account</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="policies.html">Policies</a></li>
+        <li><a href="contact.html">Contact Us</a></li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

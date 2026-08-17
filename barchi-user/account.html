@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile & Order History — Barchi Furniture</title>
+  
+  <meta name="description" content="View your customer profile details, account preferences, and past furniture order history at Barchi Furniture.">
+  
+  <!-- Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <!-- html2pdf CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 8mm;
+    }
+    @media print {
+      html, body {
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background: #ffffff !important;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      #receiptModal,
+      #receiptModal #printableInvoice,
+      #receiptModal #printableInvoice * {
+        visibility: visible !important;
+      }
+      #receiptModal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        transform: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      .no-print,
+      .modal-backdrop,
+      header,
+      footer,
+      nav {
+        display: none !important;
+      }
+    }
+  </style>
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- MAIN HEADER (STICKY AT VERY TOP) -->
+  <header class="main-header">
+    <div class="container">
+      <div class="header-row">
+        
+        <!-- Left Wrap: Mobile Hamburger + Barchi Logo -->
+        <div class="header-left-wrap">
+          <button class="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+
+          <a href="index.html" class="brand-logo">
+            <img src="images/barchi-logo.png" alt="Barchi Logo" class="brand-logo-img">
+            <div class="brand-logo-text">
+              <div class="logo-main">BARCHI <span>FURNITURE</span></div>
+              <div class="logo-sub">LUXURY LIVING & CUSTOM INTERIORS</div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Header Nav Links -->
+        <ul class="header-nav-menu">
+          <li><a href="about.html" class="header-nav-link ">About Us</a></li>
+          <li><a href="policies.html" class="header-nav-link ">Policies</a></li>
+          <li><a href="contact.html" class="header-nav-link ">Contact Us</a></li>
+        </ul>
+
+        <!-- Search Bar -->
+        <div class="header-search">
+          <div class="search-input-wrap">
+            <input type="text" id="searchInput" placeholder="Search solid teak beds, royal sofas, dining..." aria-label="Search products">
+            <button class="search-btn" onclick="executeSearch('searchInput')" aria-label="Submit Search">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Desktop Action Buttons -->
+        <div class="header-actions">
+          <button class="action-btn" onclick="handleHeaderAccountClick()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="7" r="4" stroke-width="2"/></svg>
+            Account
+          </button>
+          <button class="action-btn" onclick="toggleCartDrawer()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Cart
+            <span class="badge-count" id="cartCountDesktop">0</span>
+          </button>
+        </div>
+
+        <button class="mobile-cart-btn" onclick="toggleCartDrawer()" aria-label="Cart">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="badge-count" id="cartCountMobileHeader">0</span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+    <!-- SIDE NAVIGATION DRAWER (DESKTOP & MOBILE) -->
+  <div class="mobile-nav-drawer" id="mobileNavDrawer">
+    <div class="mobile-nav-header">
+      <a href="index.html" class="brand-logo" style="text-decoration:none;">
+        <img src="images/barchi-logo.png" alt="Barchi Logo" class="brand-logo-img">
+        <div class="brand-logo-text">
+          <div class="logo-main">BARCHI <span>FURNITURE</span></div>
+          <div class="logo-sub">LUXURY LIVING</div>
+        </div>
+      </a>
+      <button class="close-btn" style="color:var(--primary-dark)" onclick="toggleMobileNav()">&times;</button>
+    </div>
+    <div class="mobile-nav-body">
+      <ul class="mobile-nav-list">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="allcategorie.html">Category</a></li>
+        <li><a href="account.html">Account</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="policies.html">Policies</a></li>
+        <li><a href="contact.html">Contact Us</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- BREADCRUMB BAR -->
+  <div class="container" style="padding-top:20px;">
+    <div class="breadcrumb-bar">
+      <a href="index.html">Home</a> &gt; <span>My Profile & Order History</span>
+    </div>
+  </div>
+
+  <!-- MAIN ACCOUNT & ORDER HISTORY PAGE WRAPPER -->
+  <main class="account-wrapper">
+    <div class="container">
+      
+      <div class="account-grid">
+        
+        <!-- LEFT SIDEBAR: PROFILE OVERVIEW -->
+        <aside class="profile-card">
+          <div style="text-align:center;">
+            <div class="profile-avatar-wrap">
+              <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            </div>
+            <h2 id="accPageName" style="font-family:'Playfair Display', serif; font-size:1.35rem; color:var(--primary-dark); font-weight:700; margin-bottom:4px;">Guest Customer</h2>
+            <p id="accPageEmail" style="font-size:0.86rem; color:var(--text-muted); margin-bottom:14px;">Not signed in</p>
+            
+            <div style="background:#f8fafc; padding:10px 14px; border-radius:8px; font-size:0.8rem; color:#475569; margin-bottom:20px; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--primary-brand)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <strong>Instant Express Checkout</strong>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div id="unauthBtnGroup" style="display:flex; flex-direction:column; gap:10px;">
+                <button onclick="window.location.href='login.html?mode=login'" style="width:100%; background:var(--primary-brand); color:white; font-weight:700; padding:12px; border:none; border-radius:30px; font-size:0.9rem; cursor:pointer;">Log In</button>
+                <button onclick="window.location.href='login.html?mode=signup'" style="width:100%; background:#f1f5f9; color:var(--primary-dark); font-weight:700; padding:10px; border:1px solid #cbd5e1; border-radius:30px; font-size:0.88rem; cursor:pointer;">Create Account</button>
+              </div>
+              <button id="signOutBtn" onclick="removeUserAccount(); window.location.href='index.html';" style="width:100%; background:#f1f5f9; color:#ef4444; font-weight:600; padding:10px; border:none; border-radius:30px; font-size:0.88rem; cursor:pointer; display:none;">Sign Out</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- RIGHT MAIN PANEL: ORDER HISTORY TABLE -->
+        <section class="orders-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:16px; border-bottom:1px solid #e2e8f0; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h2 style="font-family:'Playfair Display', serif; font-size:1.45rem; color:var(--primary-dark); font-weight:700;">My Order History</h2>
+              <p style="font-size:0.86rem; color:var(--text-muted); margin-top:2px;">Track past orders, view invoices, and monitor delivery status</p>
+            </div>
+            <span id="orderTotalCountBadge" style="background:#f1f5f9; color:var(--primary-dark); font-weight:700; font-size:0.82rem; padding:6px 14px; border-radius:20px;">0 Orders</span>
+          </div>
+
+          <!-- DYNAMIC ORDER HISTORY TABLE -->
+          <div class="orders-table-wrap" id="ordersTableContainer">
+            <div style="text-align:center; padding:48px 20px; color:var(--text-muted);">
+              Loading your order history...
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- RECEIPT MODAL BACKDROP -->
+  <div class="modal-backdrop" id="receiptBackdrop" onclick="closeOrderReceiptModal()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.75); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:99990;"></div>
+
+  <!-- RECEIPT MODAL -->
+  <div id="receiptModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:94%; max-width:640px; max-height:88vh; overflow-y:auto; background:#ffffff; border-radius:20px; box-shadow:0 25px 60px rgba(0,0,0,0.3); z-index:99999; padding:28px 24px; border:1px solid #e2e8f0;">
+    <button onclick="closeOrderReceiptModal()" aria-label="Close" style="position:absolute; top:16px; right:16px; background:#f1f5f9; border:none; width:32px; height:32px; border-radius:50%; font-size:18px; color:#475569; cursor:pointer; font-weight:700; display:flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">&times;</button>
+    
+    <div id="receiptModalBody"></div>
+  </div>
+
+  <!-- CART DRAWER -->
+  <div class="modal-backdrop" id="backdrop" onclick="closeCartDrawer()"></div>
+
+  <div class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h3>Your Barchi Shopping Bag (<span id="cartCountTitle">0</span>)</h3>
+      <button class="close-btn" onclick="toggleCartDrawer()">&times;</button>
+    </div>
+    <div class="cart-free-shipping">
+      BARCHI CRAFTSMEN DIRECT DELIVERY
+    </div>
+    <div class="cart-body" id="cartBody"></div>
+    <div class="cart-footer">
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span id="cartSubtotal">₹0</span>
+      </div>
+      <div class="summary-row total">
+        <span>Total Amount</span>
+        <span id="cartTotal">₹0</span>
+      </div>
+      <button class="btn-checkout" onclick="startCheckoutFromCart()">Proceed to Checkout</button>
+    </div>
+  </div>
+
+      <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col brand-col">
+          <a href="index.html" class="brand-logo" style="margin-bottom:14px; text-decoration:none;">
+            <img src="images/barchi-logo.png" alt="Barchi Logo" class="brand-logo-img">
+            <div class="brand-logo-text">
+              <div class="logo-main">BARCHI <span>FURNITURE</span></div>
+              <div class="logo-sub">LUXURY LIVING & CUSTOM INTERIORS</div>
+            </div>
+          </a>
+          <p style="line-height: 1.6; color:var(--text-muted); max-width:500px; margin-bottom:16px;">
+            Barchi Furniture is your premier destination for handcrafted solid teak wood furniture, luxury sofas, and tailor-made interior solutions. This website is owned and managed by BARCHI FURNITURE. <a href="policies.html" style="color:var(--primary-brand, #c97a63); font-weight:600; text-decoration:underline;">Terms &amp; Conditions</a>
+          </p>
+          <!-- Policy Navigation Links -->
+          <div style="display:flex; flex-wrap:wrap; gap:12px 20px; margin-top:4px;">
+            <a href="shipping-policy.html" style="color:var(--primary-brand,#c97a63); font-weight:600; text-decoration:underline; font-size:13px;">Shipping Policy</a>
+            <a href="privacy-policy.html" style="color:var(--primary-brand,#c97a63); font-weight:600; text-decoration:underline; font-size:13px;">Privacy Policy</a>
+            <a href="refund-policy.html" style="color:var(--primary-brand,#c97a63); font-weight:600; text-decoration:underline; font-size:13px;">Refund Policy</a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <div class="footer-col-header">
+            <h4>Solapur Main Showroom</h4>
+          </div>
+          <p style="margin-bottom:12px; color:var(--text-muted); font-size:13px; line-height:1.5;">
+            Park Chowk, Opp, Sidheshwar Mandir, Main Rd, near Adventure Park, Sidheshwar Peth, Solapur, Maharashtra 413001
+          </p>
+          <a href="contact.html" class="btn-primary" style="padding:8px 18px; font-size:12px; display:inline-block; text-decoration:none;">Contact Showroom</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 BARCHI FURNITURE. All Rights Reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toast">
+    <span id="toastMsg">Notification message</span>
+  </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR (mobile only, hidden on desktop via CSS) -->
+  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <a href="index.html" class="mobile-nav-item" id="nav-home">
+      <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="allcategorie.html" class="mobile-nav-item" id="nav-category">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Category</span>
+    </a>
+    <a href="account.html" class="mobile-nav-item active" id="nav-account">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Account</span>
+    </a>
+    <a href="about.html" class="mobile-nav-item" id="nav-about">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>About Us</span>
+    </a>
+  </nav>
+
+  <!-- Scripts -->
+  <script src="main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await renderCustomerProfilePage();
+    });
+
+    async function renderCustomerProfilePage() {
+      const account = getUserAccount();
+      
+      const nameEl = document.getElementById('accPageName');
+      const emailEl = document.getElementById('accPageEmail');
+      const unauthBtnGroup = document.getElementById('unauthBtnGroup');
+      const signOutBtn = document.getElementById('signOutBtn');
+      
+      if (account && (account.name || account.email)) {
+        if (nameEl) nameEl.textContent = account.name || "Barchi Customer";
+        if (emailEl) emailEl.innerHTML = `${account.email || ''} ${account.phone ? `· <span style="color:#64748b;">${account.phone}</span>` : ''}`;
+        if (signOutBtn) signOutBtn.style.display = 'block';
+        if (unauthBtnGroup) unauthBtnGroup.style.display = 'none';
+      } else {
+        if (nameEl) nameEl.textContent = "Guest Customer";
+        if (emailEl) emailEl.textContent = "Not signed in";
+        if (signOutBtn) signOutBtn.style.display = 'none';
+        if (unauthBtnGroup) unauthBtnGroup.style.display = 'flex';
+      }
+
+      await loadCustomerAccountOrders();
+    }
+
+    async function loadCustomerAccountOrders() {
+      const container = document.getElementById('ordersTableContainer');
+      const badge = document.getElementById('orderTotalCountBadge');
+      if (!container) return;
+
+      const account = getUserAccount();
+      
+      // If user is not signed in, show sign-in prompt
+      if (!account || (!account.email && !account.phone)) {
+        if (badge) badge.textContent = "0 Orders";
+        container.innerHTML = `
+          <div style="text-align:center; padding:56px 20px; background:#f8fafc; border-radius:12px;">
+            <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" style="margin-bottom:12px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            <h3 style="font-size:1.15rem; color:var(--primary-dark); font-weight:700; margin-bottom:6px;">Sign In to View Your Order History</h3>
+            <p style="color:var(--text-muted); font-size:0.88rem; max-width:400px; margin:0 auto 20px;">Log in with your registered mobile number and email to securely access your previous orders, live tracking, and downloadable tax invoices.</p>
+            <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+              <a href="login.html?mode=login" class="btn-primary" style="display:inline-block; text-decoration:none; padding:10px 22px;">Log In</a>
+              <a href="login.html?mode=signup" style="display:inline-block; text-decoration:none; padding:10px 20px; background:#f1f5f9; color:var(--primary-dark); font-weight:700; border-radius:30px; border:1px solid #cbd5e1; font-size:14px;">Create Account</a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="text-align:center; padding:48px 20px; color:var(--text-muted);">
+          Loading your order history from server...
+        </div>
+      `;
+
+      const cleanEmail = (account.email || '').trim().toLowerCase();
+      const cleanPhone = String(account.phone || '').replace(/\D/g, '');
+
+      // Load strictly from Supabase for this customer's account (do not store or mix orders in localStorage)
+      let orders = [];
+      const SUPABASE_REST_URL = 'https://fyviuwmvyussvzeufuwg.supabase.co';
+      const SUPABASE_REST_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5dml1d212eXVzc3Z6ZXVmdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0MTA3MTUsImV4cCI6MjEwMDk4NjcxNX0.JbpegqU_gzyp4kiUZo9yPccdqHCCalcyWLPcCABbqoc';
+
+      if (window._userSupabaseClient && cleanEmail) {
+        try {
+          const { data, error } = await _userSupabaseClient
+            .from('orders')
+            .select('*')
+            .ilike('client_email', cleanEmail)
+            .order('created_at', { ascending: false });
+          if (!error && Array.isArray(data)) orders = data;
+        } catch (e) {}
+      }
+
+      if (orders.length === 0 && cleanEmail) {
+        try {
+          const res = await fetch(`${SUPABASE_REST_URL}/rest/v1/orders?client_email=ilike.${encodeURIComponent(cleanEmail)}&select=*&order=created_at.desc`, {
+            headers: {
+              'apikey': SUPABASE_REST_KEY,
+              'Authorization': 'Bearer ' + SUPABASE_REST_KEY
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) orders = data;
+          }
+        } catch (e) {}
+      }
+
+      // If user also has a phone number registered, check for phone matching
+      if (cleanPhone && cleanPhone.length >= 8) {
+        const phoneOrders = orders.filter(o => {
+          const oPhone = String(o.mobile_number || o.phone || '').replace(/\D/g, '');
+          return oPhone === cleanPhone || (cleanPhone.length >= 8 && oPhone.endsWith(cleanPhone.slice(-8))) || (oPhone.length >= 8 && cleanPhone.endsWith(oPhone.slice(-8)));
+        });
+        if (phoneOrders.length > 0) {
+          orders = phoneOrders;
+        }
+      }
+
+      // Save orders in memory for modal lookup (not in localStorage)
+      window._activeCustomerOrders = orders;
+
+      const productsCatalog = await getProductsCatalogAsync();
+
+      if (!orders || orders.length === 0) {
+        if (badge) badge.textContent = "0 Orders";
+        container.innerHTML = `
+          <div style="text-align:center; padding:56px 20px; background:#f8fafc; border-radius:12px;">
+            <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" style="margin-bottom:12px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            <h3 style="font-size:1.15rem; color:var(--primary-dark); font-weight:700; margin-bottom:6px;">No Orders Placed Yet</h3>
+            <p style="color:var(--text-muted); font-size:0.88rem; max-width:380px; margin:0 auto 18px;">Browse our handcrafted solid teak wood collections and place your first order!</p>
+            <a href="index.html#products" class="btn-primary" style="display:inline-block; text-decoration:none;">Explore Collections</a>
+          </div>
+        `;
+        return;
+      }
+
+      if (badge) badge.textContent = `${orders.length} Order${orders.length !== 1 ? 's' : ''}`;
+
+      container.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          ${orders.map(ord => {
+            const rawStatus = (ord.status || 'Pending').trim();
+            const statusLower = rawStatus.toLowerCase();
+            const isDelivered = statusLower === 'delivered';
+            const formattedDate = ord.created_at ? new Date(ord.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent Order';
+            const rawItems = Array.isArray(ord.items) ? ord.items : (typeof ord.items === 'string' ? JSON.parse(ord.items || '[]') : []);
+            
+            let amount = parseFloat(ord.total_amount) || parseFloat(ord.total) || parseFloat(ord.totalPayable) || 0;
+            if (amount === 0 && rawItems.length > 0) {
+              amount = rawItems.reduce((sum, it) => sum + (parseFloat(it.price) || 0) * (parseInt(it.qty || it.quantity) || 1), 0);
+            }
+
+            // Payment Status: Strictly Paid or Failed
+            const rawPayStatus = (ord.payment_status || '').trim().toLowerCase();
+            const isPaid = rawPayStatus === 'paid' || ['confirmed', 'processing', 'delivered', 'shipped'].includes(statusLower);
+            const payBadgeHtml = isPaid ? `<span class="pay-badge-paid">Paid</span>` : `<span class="pay-badge-failed">Failed</span>`;
+
+            // Address formatting
+            const addrParts = [ord.shipping_address, ord.city, ord.state].filter(Boolean);
+            if (ord.pincode) addrParts.push(`PIN: ${ord.pincode}`);
+            const formattedAddress = addrParts.length > 0 ? addrParts.join(', ') : 'Showroom Direct Delivery';
+
+            const itemsListHtml = rawItems.map(item => {
+              const p = productsCatalog.find(prod => String(prod.id) === String(item.id)) || {};
+              const img = p.image || p.image_url || item.image || (p.images && p.images[0]) || '';
+              const title = p.title || p.name || item.title || item.name || 'Barchi Luxury Furniture Item';
+              const qty = item.qty || item.quantity || 1;
+              const itemPrice = parseFloat(item.price || p.price || 0);
+
+              return `
+                <div style="display:flex; align-items:center; gap:14px; padding:12px; background:#f8fafc; border-radius:10px; border:1px solid #f1f5f9; margin-bottom:8px;">
+                  ${img ? `<img src="${img}" style="width:54px; height:54px; object-fit:cover; border-radius:8px; flex-shrink:0; border:1px solid #e2e8f0;">` : `<div style="width:54px; height:54px; background:#e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-weight:700; flex-shrink:0;">📦</div>`}
+                  <div style="flex:1;">
+                    <div style="font-weight:700; font-size:0.92rem; color:#0f172a; margin-bottom:2px;">${title}</div>
+                    <div style="font-size:0.8rem; color:#64748b;">Quantity: <strong>${qty}</strong> ${itemPrice > 0 ? `· ₹${itemPrice.toLocaleString('en-IN')} each` : ''}</div>
+                  </div>
+                  <div style="font-weight:700; font-size:0.95rem; color:var(--primary-brand, #2563eb); text-align:right;">
+                    ₹${(itemPrice * qty || amount).toLocaleString('en-IN')}
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+            // Steps for timeline
+            const steps = [
+              { label: 'Pending', desc: 'Order Placed' },
+              { label: 'Confirmed', desc: 'Order Confirmed' },
+              { label: 'Processing', desc: 'Preparing Furniture' },
+              { label: 'Delivered', desc: 'Delivered' }
+            ];
+
+            let activeIdx = 0;
+            if (statusLower === 'confirmed') activeIdx = 1;
+            else if (statusLower === 'processing' || statusLower === 'out for delivery') activeIdx = 2;
+            else if (statusLower === 'delivered') activeIdx = 3;
+
+            const timelineHtml = isDelivered ? '' : `
+              <div style="margin-top:18px; padding-top:16px; border-top:1px solid #f1f5f9;">
+                <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#64748b; margin-bottom:14px; display:flex; align-items:center; gap:6px;">
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  Order Status Timeline
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(4, 1fr); position:relative; gap:4px;">
+                  ${steps.map((st, idx) => {
+                    const isDone = idx <= activeIdx;
+                    const isCurrent = idx === activeIdx;
+                    const dotBg = isDone ? '#10b981' : '#cbd5e1';
+                    const textColor = isDone ? '#0f172a' : '#94a3b8';
+
+                    return `
+                      <div style="display:flex; flex-direction:column; align-items:center; text-align:center; position:relative;">
+                        <div style="width:26px; height:26px; border-radius:50%; background:${dotBg}; color:#ffffff; font-weight:800; font-size:0.75rem; display:flex; align-items:center; justify-content:center; box-shadow:${isCurrent ? '0 0 0 4px rgba(16,185,129,0.25)' : 'none'}; z-index:2; transition:all 0.3s;">
+                          ${isDone ? '✓' : (idx + 1)}
+                        </div>
+                        <div style="font-size:0.78rem; font-weight:${isDone ? '700' : '500'}; color:${textColor}; margin-top:6px;">${st.label}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+
+            return `
+              <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; box-shadow:0 4px 16px -2px rgba(0,0,0,0.04);">
+                <!-- ORDER CARD HEADER -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid #f1f5f9;">
+                  <div>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                      <span style="font-family:'Outfit', sans-serif; font-size:1.1rem; font-weight:800; color:#0f172a;">#${ord.id}</span>
+                      <span style="font-size:0.8rem; color:#64748b; background:#f1f5f9; padding:2px 10px; border-radius:12px;">${formattedDate}</span>
+                      ${payBadgeHtml}
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:1.1rem; font-weight:800; color:var(--primary-brand, #2563eb);">₹${amount.toLocaleString('en-IN')}</span>
+                    ${isDelivered ? `
+                      <span style="background:#d1fae5; color:#065f46; font-weight:700; font-size:0.85rem; padding:6px 14px; border-radius:20px; display:inline-flex; align-items:center; gap:4px; border:1px solid #a7f3d0;">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        Delivered ✓
+                      </span>
+                    ` : `
+                      <span class="order-status-badge ${statusLower}">${rawStatus}</span>
+                    `}
+                  </div>
+                </div>
+
+                <!-- DELIVERY ADDRESS -->
+                <div style="font-size:0.82rem; color:#475569; margin-bottom:12px; background:#f8fafc; padding:8px 12px; border-radius:8px; border:1px solid #f1f5f9;">
+                  📍 <strong>Delivery Address:</strong> ${formattedAddress}
+                </div>
+
+                <!-- PRODUCTS IN THIS ORDER -->
+                <div>
+                  ${itemsListHtml || '<div style="color:#64748b; font-size:0.9rem; padding:8px 0;">1 x Furniture Item</div>'}
+                </div>
+
+                <!-- DYNAMIC STATUS TIMELINE (REMOVED WHEN DELIVERED) -->
+                ${timelineHtml}
+
+                <div style="margin-top:16px; display:flex; justify-content:flex-end;">
+                  <button onclick="openOrderReceiptModal('${ord.id}')" style="background:#f8fafc; color:#334155; border:1px solid #cbd5e1; font-weight:600; padding:8px 16px; border-radius:20px; font-size:0.82rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    View Receipt / Invoice
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    async function openOrderReceiptModal(orderId) {
+      const backdrop = document.getElementById('receiptBackdrop');
+      const modal = document.getElementById('receiptModal');
+      const headerEl = document.getElementById('receiptOrderIdHeader');
+      const bodyEl = document.getElementById('receiptModalBody');
+
+      if (!modal || !bodyEl) return;
+
+      let orders = window._activeCustomerOrders || [];
+      let ord = orders.find(o => String(o.id) === String(orderId));
+
+      if (!ord && _userSupabaseClient) {
+        try {
+          const { data } = await _userSupabaseClient.from('orders').select('*').eq('id', orderId).single();
+          if (data) ord = data;
+        } catch(e) {}
+      }
+
+      if (!ord) return;
+
+      const rawStatus = (ord.status || 'Pending').trim();
+      const statusLower = rawStatus.toLowerCase();
+      const rawPayStatus = (ord.payment_status || '').trim().toLowerCase();
+
+      // Check if order payment has been completed / confirmed
+      const isPaid = rawPayStatus === 'paid' || 
+                     ['confirmed', 'processing', 'delivered', 'shipped'].includes(statusLower);
+
+      const productsCatalog = await getProductsCatalogAsync();
+      const rawItems = Array.isArray(ord.items) ? ord.items : (typeof ord.items === 'string' ? JSON.parse(ord.items || '[]') : []);
+
+      let totalAmount = parseFloat(ord.total_amount) || parseFloat(ord.total) || 0;
+      if (totalAmount === 0 && rawItems.length > 0) {
+        totalAmount = rawItems.reduce((sum, it) => sum + (parseFloat(it.price) || 0) * (parseInt(it.qty || it.quantity) || 1), 0);
+      }
+
+      const orderDate = ord.created_at ? new Date(ord.created_at) : new Date();
+      const formattedDate = orderDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      const formattedTime = orderDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+      // ==========================================
+      // CASE 1: PAYMENT NOT CONFIRMED / PENDING
+      // ==========================================
+      if (!isPaid) {
+        if (headerEl) headerEl.textContent = `Order #${ord.id}`;
+
+        bodyEl.innerHTML = `
+          <div style="text-align:center; padding:10px 0 20px;">
+            <div style="width:72px; height:72px; background:#fef3c7; color:#d97706; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; box-shadow:0 6px 20px rgba(217, 119, 6, 0.18);">
+              <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+            </div>
+            
+            <h3 style="font-family:var(--font-serif, 'Playfair Display', serif); font-size:22px; color:#92400e; font-weight:700; margin-bottom:8px;">
+              Payment Not Confirmed
+            </h3>
+            
+            <p style="font-size:14px; color:#64748b; max-width:420px; margin:0 auto 18px; line-height:1.5;">
+              The payment for Order <strong>#${ord.id}</strong> has not been completed or verified yet. Official tax invoices & warranty receipts are generated only after successful payment confirmation.
+            </p>
+
+            <div style="background:#fffbeb; border:1px dashed #fde68a; border-radius:12px; padding:16px; max-width:400px; margin:0 auto 20px; text-align:left; font-size:13px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span style="color:#78350f;">Order Status:</span>
+                <span class="order-status-badge pending" style="font-size:11px; padding:2px 8px;">${rawStatus}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span style="color:#78350f;">Date Initiated:</span>
+                <strong style="color:#1e293b;">${formattedDate}, ${formattedTime}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding-top:8px; border-top:1px dashed #fde68a;">
+                <span style="color:#78350f; font-weight:700;">Payable Amount:</span>
+                <strong style="color:#92400e; font-size:15px;">₹${totalAmount.toLocaleString('en-IN')}</strong>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+              <button onclick="retryPaymentForOrder('${ord.id}')" class="btn-primary" style="background:linear-gradient(135deg, #5f259f 0%, #7c3aed 100%); border:none; padding:12px 22px; font-size:14px; box-shadow:0 4px 14px rgba(95, 37, 159, 0.35);">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="margin-right:6px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                Complete Payment via PhonePe
+              </button>
+              <button onclick="closeOrderReceiptModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-weight:600; padding:12px 20px; border-radius:30px; font-size:14px; cursor:pointer;">
+                Close
+              </button>
+            </div>
+          </div>
+        `;
+      } 
+      // ==========================================
+      // CASE 2: PAYMENT VERIFIED & CONFIRMED BILL
+      // ==========================================
+      else {
+        if (headerEl) headerEl.textContent = `Tax Invoice · INV-${ord.id}`;
+
+        const itemsTableRows = rawItems.map((item, idx) => {
+          const p = productsCatalog.find(prod => String(prod.id) === String(item.id)) || {};
+          const title = item.title || item.name || p.title || p.name || 'Barchi Luxury Furniture';
+          const price = parseFloat(item.price || p.price || 0);
+          const qty = parseInt(item.qty || item.quantity || 1);
+          const itemTotal = price * qty;
+          const img = item.image || p.image || '';
+
+          return `
+            <tr style="border-bottom:1px solid #f1f5f9; page-break-inside:avoid;">
+              <td style="padding:6px 6px; font-size:11.5px; color:#64748b; text-align:center;">${idx + 1}</td>
+              <td style="padding:6px 6px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  ${img ? `<img src="${img}" style="width:32px; height:32px; object-fit:cover; border-radius:4px; border:1px solid #e2e8f0; flex-shrink:0;">` : ''}
+                  <div>
+                    <strong style="font-size:12px; color:#0f172a; display:block; line-height:1.2;">${title}</strong>
+                    <span style="font-size:10px; color:#64748b;">Solid Teak / Luxury Living</span>
+                  </div>
+                </div>
+              </td>
+              <td style="padding:6px 6px; font-size:12px; color:#0f172a; text-align:center; font-weight:600;">${qty}</td>
+              <td style="padding:6px 6px; font-size:12px; color:#0f172a; text-align:right;">₹${price.toLocaleString('en-IN')}</td>
+              <td style="padding:6px 6px; font-size:12.5px; color:#0f172a; text-align:right; font-weight:700;">₹${itemTotal.toLocaleString('en-IN')}</td>
+            </tr>
+          `;
+        }).join('');
+
+        const txnId = ord.transaction_id || `PP-${ord.id}`;
+        const shippingAddress = ord.shipping_address || `${ord.address || ''} ${ord.city || ''} ${ord.state || ''} ${ord.pin || ''}`.trim() || 'Showroom Direct Delivery';
+
+        bodyEl.innerHTML = `
+          <div id="printableInvoice" style="background:#ffffff; color:#0f172a; padding:12px 16px; font-family:'Outfit', sans-serif; max-width:600px; margin:0 auto; box-sizing:border-box;">
+            <!-- INVOICE BRAND HEADER -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; border-bottom:2px solid #5f259f; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+              <div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <img src="images/barchi-logo.png" alt="Barchi Logo" style="height:36px; width:auto;">
+                  <div>
+                    <div style="font-family:'Playfair Display', serif; font-size:16px; font-weight:800; color:#2d2b2a;">BARCHI <span style="color:#5f259f;">FURNITURE</span></div>
+                    <div style="font-size:7.5px; letter-spacing:0.8px; color:#64748b; text-transform:uppercase;">Luxury Living & Custom Interiors</div>
+                  </div>
+                </div>
+                <div style="font-size:10px; color:#64748b; margin-top:4px; line-height:1.3;">
+                  Park Chowk, Sidheshwar Peth, Solapur, MH 413001 | barchi.furniture@gmail.com
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="background:#5f259f; color:#ffffff; font-size:9.5px; font-weight:800; padding:2px 8px; border-radius:10px; display:inline-block; text-transform:uppercase; margin-bottom:4px;">
+                  Official Tax Invoice
+                </div>
+                <div style="font-size:11.5px; font-weight:700; color:#0f172a;">Invoice #: <span style="font-family:monospace; color:#5f259f;">INV-${ord.id}</span></div>
+                <div style="font-size:10.5px; color:#64748b;">${formattedDate} · ${formattedTime}</div>
+              </div>
+            </div>
+
+            <!-- CUSTOMER & PAYMENT DETAILS SUMMARY -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:#faf8f5; border:1px solid #e8e2d9; border-radius:8px; padding:10px; margin-bottom:10px; font-size:11px;">
+              <div>
+                <strong style="color:#5f259f; font-size:9.5px; text-transform:uppercase; display:block; margin-bottom:2px;">Billed & Delivered To:</strong>
+                <div style="font-weight:700; color:#0f172a; font-size:12px;">${ord.client_name || 'Barchi Customer'}</div>
+                <div style="color:#475569;">Phone: <strong>${ord.mobile_number || 'N/A'}</strong></div>
+                ${ord.client_email ? `<div style="color:#475569;">Email: ${ord.client_email}</div>` : ''}
+                <div style="color:#64748b; margin-top:2px; font-size:10px; line-height:1.2;">Address: ${shippingAddress}</div>
+              </div>
+              <div>
+                <strong style="color:#5f259f; font-size:9.5px; text-transform:uppercase; display:block; margin-bottom:2px;">Payment Verification:</strong>
+                <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px;">
+                  <span style="font-weight:700; color:#0f172a;">Status:</span>
+                  <span style="background:#dcfce7; color:#16a34a; font-weight:800; font-size:9.5px; padding:1px 6px; border-radius:3px;">PAID & VERIFIED ✓</span>
+                </div>
+                <div style="color:#475569; margin-bottom:2px;">Gateway: <strong style="color:#5f259f;">PhonePe Standard PG</strong></div>
+                <div style="color:#64748b; font-size:9.5px; word-break:break-all;">
+                  Txn Ref: <span style="font-family:monospace; font-weight:700; color:#0f172a;">${txnId}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ITEMIZATION TABLE -->
+            <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+              <thead>
+                <tr style="background:#f8fafc; border-bottom:1.5px solid #e2e8f0;">
+                  <th style="padding:5px; font-size:9.5px; font-weight:700; color:#64748b; text-align:center; width:24px;">#</th>
+                  <th style="padding:5px; font-size:9.5px; font-weight:700; color:#64748b; text-align:left;">Item</th>
+                  <th style="padding:5px; font-size:9.5px; font-weight:700; color:#64748b; text-align:center; width:30px;">Qty</th>
+                  <th style="padding:5px; font-size:9.5px; font-weight:700; color:#64748b; text-align:right; width:70px;">Rate (₹)</th>
+                  <th style="padding:5px; font-size:9.5px; font-weight:700; color:#64748b; text-align:right; width:80px;">Total (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsTableRows || `
+                  <tr>
+                    <td colspan="5" style="text-align:center; padding:8px; color:#64748b; font-size:11px;">1 x Solid Teak Wood Furniture Collection</td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+
+            <!-- TOTALS & FINANCIAL SUMMARY -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid #e2e8f0; padding-top:8px; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+              <div style="max-width:260px; font-size:10px; color:#64748b; line-height:1.3;">
+                <strong style="color:#16a34a; display:block;">✓ 100% Solid Teak Wood Quality Guarantee</strong>
+                Free direct craftsmen delivery & on-site assembly included.
+              </div>
+              <div style="min-width:180px; text-align:right; font-size:11px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:2px; color:#475569;">
+                  <span>Subtotal:</span>
+                  <span>₹${totalAmount.toLocaleString('en-IN')}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:2px; color:#16a34a;">
+                  <span>Delivery:</span>
+                  <span>FREE</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; color:#475569;">
+                  <span>GST (18%):</span>
+                  <span>Included</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800; color:#0f172a; border-top:1.5px dashed #cbd5e1; padding-top:4px;">
+                  <span>Total Paid:</span>
+                  <span style="color:#5f259f;">₹${totalAmount.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DIGITAL STAMP & SIGNATURE -->
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:8px; font-size:9.5px; color:#94a3b8;">
+              <div>Computer generated tax invoice verified by PhonePe PG.</div>
+              <div style="text-align:right;">
+                <div style="font-family:'Playfair Display', serif; font-size:11.5px; font-weight:700; color:#2d2b2a; font-style:italic;">Barchi Furniture Signatory</div>
+                <div style="font-size:8.5px; color:#64748b;">Authorized Signatory</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTION BUTTONS -->
+          <div style="display:flex; justify-content:center; gap:10px; margin-top:16px; padding-top:12px; border-top:1px solid #e2e8f0;" class="no-print">
+            <button onclick="downloadInvoicePDF('${ord.id}')" style="background:#5f259f; color:#ffffff; font-weight:700; padding:9px 20px; border:none; border-radius:30px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(95,37,159,0.3);">
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Download PDF
+            </button>
+            <button onclick="printOrderInvoice()" style="background:#f8fafc; color:#334155; font-weight:600; padding:9px 18px; border:1px solid #cbd5e1; border-radius:30px; font-size:13px; cursor:pointer;">
+              Print
+            </button>
+            <button onclick="closeOrderReceiptModal()" style="background:#f1f5f9; color:#475569; font-weight:600; padding:9px 18px; border:1px solid #cbd5e1; border-radius:30px; font-size:13px; cursor:pointer;">
+              Close
+            </button>
+          </div>
+        `;
+      }
+
+      if (backdrop) backdrop.style.display = 'block';
+      modal.style.display = 'block';
+    }
+
+    function retryPaymentForOrder(orderId) {
+      localStorage.setItem('barchi_order_id', orderId);
+      closeOrderReceiptModal();
+      window.location.href = 'payment.html';
+    }
+
+    function downloadInvoicePDF(orderId) {
+      const invoiceEl = document.getElementById('printableInvoice');
+      if (!invoiceEl) {
+        window.print();
+        return;
+      }
+
+      if (typeof html2pdf === 'function') {
+        const opt = {
+          margin: [6, 6, 6, 6],
+          filename: `Barchi-Invoice-${orderId}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(invoiceEl).save();
+      } else {
+        window.print();
+      }
+    }
+
+    function printOrderInvoice() {
+      window.print();
+    }
+
+    function closeOrderReceiptModal() {
+      const backdrop = document.getElementById('receiptBackdrop');
+      const modal = document.getElementById('receiptModal');
+      if (backdrop) backdrop.style.display = 'none';
+      if (modal) modal.style.display = 'none';
+    }
+  </script>
+  
+
+  
+
+</body>
+</html>

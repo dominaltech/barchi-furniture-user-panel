@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Category Products | Barchi Furniture</title>
+  <meta name="description" content="Explore handcrafted teak wood furniture in this luxury collection by Barchi Furniture.">
+  
+  <!-- Google Fonts: Outfit & Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <!-- External Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- MAIN HEADER (STICKY AT VERY TOP) -->
+  <header class="main-header">
+    <div class="container">
+      <div class="header-row">
+        
+        <!-- Left Wrap: Mobile Hamburger + Barchi Logo -->
+        <div class="header-left-wrap">
+          <button class="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+
+          <a href="index.html" class="brand-logo">
+            <img src="images/barchi-logo.png" alt="Barchi Logo" class="brand-logo-img">
+            <div class="brand-logo-text">
+              <div class="logo-main">BARCHI <span>FURNITURE</span></div>
+              <div class="logo-sub">LUXURY LIVING & CUSTOM INTERIORS</div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Header Nav Links -->
+        <ul class="header-nav-menu">
+          <li><a href="about.html" class="header-nav-link ">About Us</a></li>
+          <li><a href="policies.html" class="header-nav-link ">Policies</a></li>
+          <li><a href="contact.html" class="header-nav-link ">Contact Us</a></li>
+        </ul>
+
+        <!-- Search Bar -->
+        <div class="header-search">
+          <div class="search-input-wrap">
+            <input type="text" id="searchInput" placeholder="Search for Sofas, Beds, Dining Tables...">
+            <button class="search-btn" onclick="executeSearch('searchInput')">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Desktop Action Buttons -->
+        <div class="header-actions">
+          <button class="action-btn" onclick="handleHeaderAccountClick()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="7" r="4" stroke-width="2"/></svg>
+            Account
+          </button>
+          <button class="action-btn" onclick="toggleCartDrawer()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Cart
+            <span class="badge-count" id="cartCountDesktop">0</span>
+          </button>
+        </div>
+
+        <!-- Mobile Cart Button (Top Right) -->
+        <button class="mobile-cart-btn" onclick="toggleCartDrawer()" aria-label="Cart">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="badge-count" id="cartCountMobileHeader">0</span>
+        </button>
+
+      </div>
+
+      <!-- Mobile Search Bar Row -->
+      <div class="mobile-search-row">
+        <div class="search-input-wrap">
+          <input type="text" id="mobileSearchInput" placeholder="Search for Sofas, Beds, Dining Tables...">
+          <button class="search-btn" onclick="executeSearch('mobileSearchInput')">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE SIDE NAVIGATION DRAWER -->
+    <!-- SIDE NAVIGATION DRAWER (DESKTOP & MOBILE) -->
+  <div class="mobile-nav-drawer" id="mobileNavDrawer">
+    <div class="mobile-nav-header">
+      <a href="index.html" class="brand-logo" style="text-decoration:none;">
+        <img src="images/barchi-logo.png" alt="Barchi Logo" class="brand-logo-img">
+        <div class="brand-logo-text">
+          <div class="logo-main">BARCHI <span>FURNITURE</span></div>
+          <div class="logo-sub">LUXURY LIVING</div>
+        </div>
+      </a>
+      <button class="close-btn" style="color:var(--primary-dark)" onclick="toggleMobileNav()">&times;</button>
+    </div>
+    <div class="mobile-nav-body">
+      <ul class="mobile-nav-list">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="allcategorie.html">Category</a></li>
+        <li><a href="account.html">Account</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="policies.html">Policies</a></li>
+        <li><a href="contact.html">Contact Us</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- BREADCRUMB NAVIGATION BAR -->
+  <section style="background: var(--bg-soft-gray); padding: 14px 0; border-bottom: 1px solid var(--border-color);">
+    <div class="container">
+      <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <a href="index.html" style="color: var(--text-muted); transition: var(--transition);">Home</a>
+        <span style="color: var(--text-light);">/</span>
+        <a href="index.html#categorySection" style="color: var(--text-muted); transition: var(--transition);">Categories</a>
+        <span style="color: var(--text-light);">/</span>
+        <strong id="categoryBreadcrumbTitle" style="color: var(--primary-brand); font-weight: 700;">Loading...</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORY HERO BANNER -->
+  <section id="categoryHeroBanner" style="background: linear-gradient(135deg, #2d2b2a 0%, #1f1d1c 100%); color: white; padding: 50px 0; position: relative; overflow: hidden; border-bottom: 1px solid var(--border-color);">
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="max-width: 680px;">
+        <span style="background: rgba(201, 122, 99, 0.22); color: #f4efe9; border: 1px solid rgba(201, 122, 99, 0.4); padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; display: inline-block; margin-bottom: 14px;">BARCHI CURATED COLLECTION</span>
+        <h1 id="categoryPageTitle" style="font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 12px; color: #ffffff;">Loading...</h1>
+        <p id="categoryPageDesc" style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px;">Browse our hand-crafted solid teak wood furniture tailored specifically for luxury homes and bespoke interiors.</p>
+        <span id="categoryPageCountBadge" style="background: var(--primary-brand); color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(201, 122, 99, 0.3);">0 Products Available</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORY PRODUCTS GALLERY SECTION -->
+  <section class="section-padding" style="background: var(--bg-body); padding: 40px 0 60px 0;">
+    <div class="container">
+      
+      <!-- TITLE & FILTER ROW -->
+      <div class="section-title-wrap" style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h2 class="section-title" id="categoryGridHeading" style="font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--primary-dark);">Products</h2>
+          <p class="section-subtitle" style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Click any product to view specifications, full details, and place your order</p>
+        </div>
+      </div>
+
+      <!-- PRODUCT GRID -->
+      <div class="product-grid" id="categoryPageProductGrid">
+        <!-- Dynamically rendered via JavaScript -->
+      </div>
+    </div>
+  </section>
+
+  <!-- CART DRAWER -->
+  <div class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h3>Shopping Bag (<span id="cartCountTitle">0</span>)</h3>
+      <button onclick="closeCartDrawer()" class="close-btn">&times;</button>
+    </div>
+    <div class="cart-body" id="cartBody">
+      <!-- Dynamic cart items -->
+    </div>
+    <div class="cart-footer">
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span id="cartSubtotal">₹0</span>
+      </div>
+      <div class="summary-row total">
+        <span>Total Amount</span>
+        <span id="cartTotal">₹0</span>
+      </div>
+      <button class="btn-checkout" onclick="startCheckoutFromCart()">Proceed to Checkout</button>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="backdrop" onclick="closeCartDrawer()"></div>
+
+  <!-- FOOTER WITH HIGH-VISIBILITY BARCHI FURNITURE LOGO -->
+      <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col brand-col">
+          <a href="index.html" class="brand-logo" style="margin-bottom:14px; text-decoration:none;">
+            <img src="images/barchi-logo.png" alt="Barchi Logo" class="brand-logo-img">
+            <div class="brand-logo-text">
+              <div class="logo-main">BARCHI <span>FURNITURE</span></div>
+              <div class="logo-sub">LUXURY LIVING & CUSTOM INTERIORS</div>
+            </div>
+          </a>
+          <p style="line-height: 1.6; color:var(--text-muted); max-width:500px; margin-bottom:16px;">
+            Barchi Furniture is your premier destination for handcrafted solid teak wood furniture, luxury sofas, and tailor-made interior solutions. This website is owned and managed by BARCHI FURNITURE. <a href="policies.html" style="color:var(--primary-brand, #c97a63); font-weight:600; text-decoration:underline;">Terms &amp; Conditions</a>
+          </p>
+          <!-- Policy Navigation Links -->
+          <div style="display:flex; flex-wrap:wrap; gap:12px 20px; margin-top:4px;">
+            <a href="shipping-policy.html" style="color:var(--primary-brand,#c97a63); font-weight:600; text-decoration:underline; font-size:13px;">Shipping Policy</a>
+            <a href="privacy-policy.html" style="color:var(--primary-brand,#c97a63); font-weight:600; text-decoration:underline; font-size:13px;">Privacy Policy</a>
+            <a href="refund-policy.html" style="color:var(--primary-brand,#c97a63); font-weight:600; text-decoration:underline; font-size:13px;">Refund Policy</a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <div class="footer-col-header">
+            <h4>Solapur Main Showroom</h4>
+          </div>
+          <p style="margin-bottom:12px; color:var(--text-muted); font-size:13px; line-height:1.5;">
+            Park Chowk, Opp, Sidheshwar Mandir, Main Rd, near Adventure Park, Sidheshwar Peth, Solapur, Maharashtra 413001
+          </p>
+          <a href="contact.html" class="btn-primary" style="padding:8px 18px; font-size:12px; display:inline-block; text-decoration:none;">Contact Showroom</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 BARCHI FURNITURE. All Rights Reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toast">
+    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--primary-brand)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    <span id="toastMsg">Item added to cart!</span>
+  </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR (mobile only, hidden on desktop via CSS) -->
+  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <a href="index.html" class="mobile-nav-item" id="nav-home">
+      <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="allcategorie.html" class="mobile-nav-item active" id="nav-category">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Category</span>
+    </a>
+    <a href="account.html" class="mobile-nav-item" id="nav-account">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Account</span>
+    </a>
+    <a href="about.html" class="mobile-nav-item" id="nav-about">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>About Us</span>
+    </a>
+  </nav>
+
+  <!-- JavaScript -->
+  <script src="main.js"></script>
+  
+
+  
+
+</body>
+</html>
