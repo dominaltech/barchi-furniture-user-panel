@@ -84,10 +84,9 @@ module.exports = async (req, res) => {
     // Convert amount in Rupees to Paise (PhonePe requires amount in Paise integer)
     const amountInPaise = Math.round(numAmount * 100);
 
-    // Generate or format unique merchant order ID
-    const cleanOrderId = merchantOrderId 
-      ? String(merchantOrderId).replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 63)
-      : `BARCHI_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+    // Generate or format unique merchant order ID for PhonePe PG (requires [a-zA-Z0-9_-])
+    const originalOrderId = merchantOrderId ? String(merchantOrderId).trim() : `BARCHI_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+    const cleanOrderId = originalOrderId.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 63);
 
     // Determine base URL for redirect callback
     let origin = 'https://barchi-user.vercel.app';
@@ -102,7 +101,7 @@ module.exports = async (req, res) => {
       origin = `https://${req.headers.host}`;
     }
 
-    const redirectUrl = customRedirectUrl || `${origin}/order-success.html?orderId=${encodeURIComponent(cleanOrderId)}`;
+    const redirectUrl = customRedirectUrl || `${origin}/order-success.html?orderId=${encodeURIComponent(originalOrderId)}&merchantOrderId=${encodeURIComponent(cleanOrderId)}`;
 
     // 1. Fetch OAuth Access Token
     const token = await getAccessToken();

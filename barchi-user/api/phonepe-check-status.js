@@ -84,8 +84,12 @@ module.exports = async (req, res) => {
     // 1. Fetch OAuth Access Token
     const token = await getAccessToken();
 
+    // Sanitized PhonePe merchant order ID (e.g., 2026_08_17_1)
+    const phonePeOrderId = cleanOrderId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const displayOrderId = cleanOrderId.includes('_') ? cleanOrderId.replace(/_/g, '/') : cleanOrderId;
+
     // 2. Query PhonePe Order Status API
-    const statusUrl = `${STATUS_BASE_URL}/${encodeURIComponent(cleanOrderId)}/status?details=true&errorContext=true`;
+    const statusUrl = `${STATUS_BASE_URL}/${encodeURIComponent(phonePeOrderId)}/status?details=true&errorContext=true`;
     const ppRes = await fetch(statusUrl, {
       method: 'GET',
       headers: {
@@ -110,38 +114,33 @@ module.exports = async (req, res) => {
     // 3. Update Supabase order record based on payment outcome
     if (SB_URL && SB_KEY) {
       try {
-        if (isCompleted) {
-          await fetch(`${SB_URL}/rest/v1/orders?id=eq.${encodeURIComponent(cleanOrderId)}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': SB_KEY,
-              'Authorization': `Bearer ${SB_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify({
-              status: 'Confirmed',
-              payment_status: 'Paid',
-              payment_method: 'PhonePe PG',
-              transaction_id: statusData.orderId || statusData.paymentDetails?.[0]?.transactionId || null,
-              updated_at: new Date().toISOString()
-            })
-          });
-        } else if (isFailed) {
-          await fetch(`${SB_URL}/rest/v1/orders?id=eq.${encodeURIComponent(cleanOrderId)}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': SB_KEY,
-              'Authorization': `Bearer ${SB_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify({
-              status: 'Cancelled',
-              payment_status: 'Failed',
-              updated_at: new Date().toISOString()
-            })
-          });
+        const updatePayload = isCompleted ? {
+          status: 'Confirmed',
+          payment_status: 'Paid',
+          payment_method: 'PhonePe PG',
+          transaction_id: statusData.orderId || statusData.paymentDetails?.[0]?.transactionId || null,
+          updated_at: new Date().toISOString()
+        } : (isFailed ? {
+          status: 'Cancelled',
+          payment_status: 'Failed',
+          updated_at: new Date().toISOString()
+        } : null);
+
+        if (updatePayload) {
+          // Patch both displayOrderId (2026/08/17/1) and phonePeOrderId (2026_08_17_1)
+          const targetIds = Array.from(new Set([cleanOrderId, displayOrderId, phonePeOrderId]));
+          for (const tid of targetIds) {
+            await fetch(`${SB_URL}/rest/v1/orders?id=eq.${encodeURIComponent(tid)}`, {
+              method: 'PATCH',
+              headers: {
+                'apikey': SB_KEY,
+                'Authorization': `Bearer ${SB_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify(updatePayload)
+            });
+          }
         }
       } catch (dbErr) {
         console.warn('Supabase order update notice:', dbErr.message);

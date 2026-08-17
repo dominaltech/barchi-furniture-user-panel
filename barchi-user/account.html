@@ -451,7 +451,7 @@
 
             // Payment Status: Strictly Paid or Failed
             const rawPayStatus = (ord.payment_status || '').trim().toLowerCase();
-            const isPaid = rawPayStatus === 'paid' || ['confirmed', 'processing', 'delivered', 'shipped'].includes(statusLower);
+            const isPaid = ['paid', 'completed', 'success'].includes(rawPayStatus) || ['confirmed', 'processing', 'delivered', 'shipped'].includes(statusLower);
             const payBadgeHtml = isPaid ? `<span class="pay-badge-paid">Paid</span>` : `<span class="pay-badge-failed">Failed</span>`;
 
             // Address formatting
@@ -594,7 +594,7 @@
       const rawPayStatus = (ord.payment_status || '').trim().toLowerCase();
 
       // Check if order payment has been completed / confirmed
-      const isPaid = rawPayStatus === 'paid' || 
+      const isPaid = ['paid', 'completed', 'success'].includes(rawPayStatus) || 
                      ['confirmed', 'processing', 'delivered', 'shipped'].includes(statusLower);
 
       const productsCatalog = await getProductsCatalogAsync();

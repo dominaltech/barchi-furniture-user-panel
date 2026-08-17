@@ -453,7 +453,9 @@
       const successEl = document.getElementById('successState');
       const failedEl = document.getElementById('failedState');
 
-      function showSuccess(orderId, txnId, amount) {
+      let _orderNotified = false;
+
+      async function showSuccess(orderId, txnId, amount) {
         if (verifyingEl) verifyingEl.style.display = 'none';
         if (failedEl) failedEl.style.display = 'none';
         if (successEl) successEl.style.display = 'block';
@@ -494,7 +496,34 @@
 
         _currentConfirmedOrder = updatedOrder;
 
-        // 1. Update localStorage orders so account.html sees it immediately
+        // 1. Update Supabase order record directly to ensure Paid & Confirmed status
+        try {
+          const SB_URL = 'https://fyviuwmvyussvzeufuwg.supabase.co';
+          const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5dml1d212eXVzc3Z6ZXVmdXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0MTA3MTUsImV4cCI6MjEwMDk4NjcxNX0.JbpegqU_gzyp4kiUZo9yPccdqHCCalcyWLPcCABbqoc';
+          const orderTargets = Array.from(new Set([String(orderId), String(orderId).replace(/_/g, '/')]));
+          for (const tid of orderTargets) {
+            await fetch(`${SB_URL}/rest/v1/orders?id=eq.${encodeURIComponent(tid)}`, {
+              method: 'PATCH',
+              headers: {
+                'apikey': SB_KEY,
+                'Authorization': `Bearer ${SB_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify({
+                status: 'Confirmed',
+                payment_status: 'Paid',
+                payment_method: 'PhonePe PG',
+                transaction_id: txnId || null,
+                updated_at: new Date().toISOString()
+              })
+            });
+          }
+        } catch (dbErr) {
+          console.warn('Supabase direct patch notice:', dbErr);
+        }
+
+        // 2. Update localStorage orders so account.html sees it immediately
         try {
           const cachedOrders = JSON.parse(localStorage.getItem('barchi_saved_orders_v1')) || [];
           const foundIdx = cachedOrders.findIndex(o => String(o.id) === String(orderId));
@@ -514,7 +543,7 @@
           console.warn('Error saving confirmed order to storage:', e);
         }
 
-        // 2. Clear shopping bag after successful verified payment
+        // 3. Clear shopping bag after successful verified payment
         try {
           localStorage.removeItem('barchi_cart');
           if (typeof cart !== 'undefined') cart = [];
@@ -522,19 +551,22 @@
           if (typeof updateCartBadges === 'function') updateCartBadges();
         } catch (e) {}
 
-        // 3. Notify Admin Panel
-        try {
-          fetch('https://barchi-admin-panel.vercel.app/api/notify-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              orderCode: orderId,
-              customer: pendingOrder.client_name || 'Barchi Customer',
-              productName: pendingOrder.items?.[0]?.title || 'PhonePe Verified Order',
-              total: finalAmount
-            })
-          }).catch(e => {});
-        } catch (e) {}
+        // 4. Notify Admin Panel (once per order)
+        if (!_orderNotified) {
+          _orderNotified = true;
+          try {
+            fetch('https://barchi-admin-panel.vercel.app/api/notify-order', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderCode: orderId,
+                customer: pendingOrder.client_name || 'Barchi Customer',
+                productName: pendingOrder.items?.[0]?.title || 'PhonePe Verified Order',
+                total: finalAmount
+              })
+            }).catch(e => {});
+          } catch (e) {}
+        }
       }
 
       function showFailed(reason) {

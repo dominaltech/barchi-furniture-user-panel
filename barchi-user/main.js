@@ -1311,6 +1311,55 @@ function handleShippingSubmit(e) {
   window.location.href = 'payment.html';
 }
 
+async function generateNextOrderId() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const datePrefix = `${year}/${month}/${day}/`; // e.g. "2026/08/17/"
+
+  let maxNum = 0;
+
+  // 1. Query Supabase for orders placed today matching this prefix
+  if (_userSupabaseClient) {
+    try {
+      const { data, error } = await _userSupabaseClient
+        .from('orders')
+        .select('id')
+        .like('id', `${datePrefix}%`);
+
+      if (!error && Array.isArray(data)) {
+        data.forEach(item => {
+          if (item && item.id && item.id.startsWith(datePrefix)) {
+            const numPart = parseInt(item.id.slice(datePrefix.length), 10);
+            if (!isNaN(numPart) && numPart > maxNum) {
+              maxNum = numPart;
+            }
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Error querying today order count from Supabase:', e);
+    }
+  }
+
+  // 2. Also check local cached orders as fallback
+  try {
+    const cachedOrders = JSON.parse(localStorage.getItem('barchi_saved_orders_v1')) || [];
+    cachedOrders.forEach(item => {
+      if (item && item.id && item.id.startsWith(datePrefix)) {
+        const numPart = parseInt(item.id.slice(datePrefix.length), 10);
+        if (!isNaN(numPart) && numPart > maxNum) {
+          maxNum = numPart;
+        }
+      }
+    });
+  } catch (e) {}
+
+  const nextNum = maxNum + 1;
+  return `${datePrefix}${nextNum}`;
+}
+
 async function handlePaymentSubmit(e) {
   e.preventDefault();
   
@@ -1337,7 +1386,8 @@ async function handlePaymentSubmit(e) {
     return;
   }
 
-  const randId = 'BARCHI_' + Date.now() + '_' + Math.floor(1000 + Math.random() * 9000);
+  // Generate Year/Month/Date/Number Order ID (starts from 1)
+  const orderId = await generateNextOrderId();
   const accUser = getUserAccount();
   const clientEmail = (shipping.email || (accUser ? accUser.email : '')).trim();
   const clientName = (shipping.name || (accUser ? accUser.name : 'Barchi Customer')).trim();
@@ -1369,7 +1419,7 @@ async function handlePaymentSubmit(e) {
   });
 
   const newOrder = {
-    id: randId,
+    id: orderId,
     client_name: clientName,
     client_email: clientEmail,
     mobile_number: clientPhone,
@@ -1379,7 +1429,7 @@ async function handlePaymentSubmit(e) {
     pincode: pincode,
     total_amount: totalAmount,
     status: 'Pending',
-    payment_status: 'Failed',
+    payment_status: 'Pending',
     payment_method: 'PhonePe PG',
     items: enrichedItems,
     created_at: new Date().toISOString()
@@ -1389,14 +1439,14 @@ async function handlePaymentSubmit(e) {
   const cachedOrders = JSON.parse(localStorage.getItem('barchi_saved_orders_v1')) || [];
   cachedOrders.unshift(newOrder);
   localStorage.setItem('barchi_saved_orders_v1', JSON.stringify(cachedOrders));
-  localStorage.setItem('barchi_order_id', randId);
+  localStorage.setItem('barchi_order_id', orderId);
   localStorage.setItem('barchi_pending_order', JSON.stringify(newOrder));
 
   // Save initial record to Supabase
   if (_userSupabaseClient) {
     try {
       await _userSupabaseClient.from('orders').insert({
-        id: randId,
+        id: orderId,
         client_name: clientName,
         client_email: clientEmail,
         mobile_number: clientPhone,
@@ -1406,7 +1456,7 @@ async function handlePaymentSubmit(e) {
         pincode: pincode,
         total_amount: totalAmount,
         status: 'Pending',
-        payment_status: 'Failed',
+        payment_status: 'Pending',
         payment_method: 'PhonePe PG',
         items: enrichedItems,
         created_at: new Date().toISOString()
@@ -1438,7 +1488,7 @@ async function handlePaymentSubmit(e) {
       },
       body: JSON.stringify({
         amount: totalAmount,
-        merchantOrderId: randId,
+        merchantOrderId: orderId,
         customer: {
           name: clientName,
           email: clientEmail,

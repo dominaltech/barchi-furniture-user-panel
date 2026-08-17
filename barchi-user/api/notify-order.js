@@ -132,19 +132,31 @@ module.exports = async (req, res) => {
       return res.status(200).json({ success: false, error: 'No admin push subscriptions found in Supabase.' });
     }
 
+    // Deduplicate subscriptions by endpoint to avoid sending duplicate push messages
+    const endpointMap = new Map();
+    for (const sub of subscriptions) {
+      if (sub && sub.endpoint && !endpointMap.has(sub.endpoint)) {
+        endpointMap.set(sub.endpoint, sub);
+      }
+    }
+    const uniqueSubs = Array.from(endpointMap.values());
+
     const product = productName ? ` · ${productName}` : '';
     const amount = total ? ` · \u20B9${total.toLocaleString('en-IN')}` : '';
+    const orderTag = `barchi-order-${orderCode || 'incoming'}`;
+
     const payload = {
       title: `🛒 New Barchi Order: ${orderCode || 'incoming'}`,
       body: `${customer || 'Customer'}${product}${amount}`,
       url: '/orders.html',
-      tag: 'barchi-order'
+      orderId: orderCode || '',
+      tag: orderTag
     };
 
     let sent = 0, failed = 0;
     const errors = [];
 
-    for (const sub of subscriptions) {
+    for (const sub of uniqueSubs) {
       try {
         if (!sub.endpoint || !sub.p256dh || !sub.auth) {
           failed++;
