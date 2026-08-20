@@ -455,6 +455,8 @@ let cart = JSON.parse(localStorage.getItem('barchi_cart')) || [];
 let currentSlide = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initPwaInstallBanner();
+  registerPwaServiceWorker();
   injectAuthModalsIfNeeded();
   updateHeaderAccountUI();
   await loadStorefrontData();
@@ -1391,7 +1393,7 @@ async function handlePaymentSubmit(e) {
   const accUser = getUserAccount();
   const clientEmail = (shipping.email || (accUser ? accUser.email : '')).trim();
   const clientName = (shipping.name || (accUser ? accUser.name : 'Barchi Customer')).trim();
-  const clientPhone = (shipping.phone || (accUser ? (accUser.phone || accUser.mobile) : '9876543210')).trim();
+  const clientPhone = (shipping.phone || (accUser ? (accUser.phone || accUser.mobile) : '+919923472964')).trim();
   const fullAddress = (shipping.address || '').trim();
   const city = (shipping.city || '').trim();
   const state = (shipping.state || '').trim();
@@ -1541,9 +1543,178 @@ function showToast(msg) {
   }, 3500);
 }
 
+// ============================================================================
+// PWA INSTALLATION & SERVICE WORKER ENGINE
+// ============================================================================
+let pwaDeferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  pwaDeferredPrompt = e;
+  initPwaInstallBanner();
+});
+
+function registerPwaServiceWorker() {
+  // ServiceWorkers and Web App Manifests require HTTP/HTTPS (or localhost)
+  if (!window.location.protocol.startsWith('http')) {
+    return;
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      // Gracefully ignore local network or dev registration limits
+    });
+  }
+}
+
+function injectManifestIfNeeded() {
+  if (window.location.protocol.startsWith('http')) {
+    if (!document.querySelector('link[rel="manifest"]')) {
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'manifest.json';
+      document.head.appendChild(link);
+    }
+  }
+}
+
+function initPwaInstallBanner() {
+  injectManifestIfNeeded();
+
+  // If already standalone PWA mode, don't show prompt banner
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+    return;
+  }
+
+  if (document.getElementById('barchiPwaInstallBanner')) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'barchiPwaInstallBanner';
+  banner.className = 'pwa-install-banner';
+  banner.innerHTML = `
+    <img src="icon-192.png" alt="Barchi Furniture" class="pwa-banner-icon" onerror="this.src='images/barchi-logo.png';">
+    <div class="pwa-banner-text">
+      <h4 class="pwa-banner-title">Barchi Furniture App</h4>
+      <p class="pwa-banner-desc">Install for faster luxury shopping & tracking</p>
+    </div>
+    <button class="pwa-install-btn" onclick="triggerPwaInstall()">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      Install
+    </button>
+    <button class="pwa-close-btn" onclick="dismissPwaBanner()" aria-label="Close Install Banner">&times;</button>
+  `;
+  document.body.appendChild(banner);
+}
+
+function dismissPwaBanner() {
+  const banner = document.getElementById('barchiPwaInstallBanner');
+  if (banner) {
+    banner.style.transform = 'translateY(30px)';
+    banner.style.opacity = '0';
+    setTimeout(() => {
+      if (banner) banner.remove();
+    }, 300);
+  }
+}
+
+async function triggerPwaInstall() {
+  if (pwaDeferredPrompt) {
+    try {
+      await pwaDeferredPrompt.prompt();
+      const choiceResult = await pwaDeferredPrompt.userChoice;
+      if (choiceResult && choiceResult.outcome === 'accepted') {
+        pwaDeferredPrompt = null;
+        showToast('Thank you for installing Barchi Furniture!');
+        const banner = document.getElementById('barchiPwaInstallBanner');
+        if (banner) banner.remove();
+      }
+    } catch (err) {
+      console.warn('PWA install prompt error:', err);
+    }
+  } else {
+    // Check if iOS device (Safari has no beforeinstallprompt, requires Add to Home Screen)
+    const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+    if (isIos) {
+      showIosInstallGuide();
+      return;
+    }
+
+    // If running directly from file:/// on local disk without a web server
+    if (!window.location.protocol.startsWith('http')) {
+      showLocalFileInstallNotice();
+    }
+  }
+}
+
+function showLocalFileInstallNotice() {
+  let modal = document.getElementById('barchiLocalInstallModal');
+  if (modal) modal.remove();
+
+  modal = document.createElement('div');
+  modal.id = 'barchiLocalInstallModal';
+  modal.className = 'pwa-ios-modal-backdrop';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div class="pwa-ios-modal">
+      <img src="icon-192.png" style="width:52px; height:52px; border-radius:12px; margin-bottom:12px; border:1px solid #e2e8f0;" onerror="this.src='images/barchi-logo.png';">
+      <h3 style="font-family:var(--font-serif); font-size:1.2rem; color:#0f172a; margin-bottom:6px;">Barchi Furniture PWA</h3>
+      <p style="font-size:0.86rem; color:#475569; line-height:1.5; margin-bottom:16px;">
+        Browser security requires an HTTP/HTTPS connection (or localhost) to trigger 1-tap app installation directly on your device.
+      </p>
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; font-size:0.84rem; text-align:left; color:#334155; margin-bottom:18px;">
+        Once hosted or run with a local server (e.g. <code>http://localhost</code> or <code>https://yourdomain.com</code>), clicking <strong>Install</strong> installs the app directly onto Android, iOS, Windows, or Mac.
+      </div>
+      <button onclick="document.getElementById('barchiLocalInstallModal').remove()" class="btn-primary" style="width:100%; justify-content:center; padding:11px; font-size:0.9rem;">Got It</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// Auto-cleanup banner once app is installed
+window.addEventListener('appinstalled', () => {
+  pwaDeferredPrompt = null;
+  const banner = document.getElementById('barchiPwaInstallBanner');
+  if (banner) banner.remove();
+  showToast('Barchi Furniture installed successfully!');
+});
+
+function showIosInstallGuide() {
+  let modal = document.getElementById('barchiIosInstallModal');
+  if (modal) modal.remove();
+
+  modal = document.createElement('div');
+  modal.id = 'barchiIosInstallModal';
+  modal.className = 'pwa-ios-modal-backdrop';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div class="pwa-ios-modal">
+      <img src="icon-192.png" style="width:52px; height:52px; border-radius:12px; margin-bottom:12px; border:1px solid #e2e8f0;" onerror="this.src='images/barchi-logo.png';">
+      <h3 style="font-family:var(--font-serif); font-size:1.2rem; color:#0f172a; margin-bottom:6px;">Install Barchi Furniture</h3>
+      <p style="font-size:0.85rem; color:#64748b; line-height:1.45; margin-bottom:16px;">
+        Install our web app to your Home Screen for easy 1-tap access and fastest checkout.
+      </p>
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; font-size:0.84rem; text-align:left; color:#334155; margin-bottom:18px;">
+        <div style="margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+          <span style="background:#e2e8f0; width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:12px;">1</span>
+          <span>Tap the <strong>Share</strong> button <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#2563eb" style="vertical-align:middle; display:inline-block;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg> at the bottom of Safari.</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="background:#e2e8f0; width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:12px;">2</span>
+          <span>Scroll down & tap <strong>Add to Home Screen ➕</strong>.</span>
+        </div>
+      </div>
+      <button onclick="document.getElementById('barchiIosInstallModal').remove()" class="btn-primary" style="width:100%; justify-content:center; padding:11px; font-size:0.9rem;">Got It</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
 // EXPOSE UTILITIES TO WINDOW
 window.proceedToCheckoutOrSignIn = proceedToCheckoutOrSignIn;
 window.handleHeaderAccountClick = handleHeaderAccountClick;
 window.openSignInModal = openSignInModal;
 window.closeSignInModal = closeSignInModal;
 window.removeUserAccount = removeUserAccount;
+window.triggerPwaInstall = triggerPwaInstall;
+window.dismissPwaBanner = dismissPwaBanner;
+
+
